@@ -457,7 +457,7 @@ patchpilot/
 |---------|--------|
 | 0-new   | [x] Complete |
 | 1A      | [x] Complete |
-| 1B      | [ ] Not started |
+| 1B      | [x] Complete |
 | 1C      | [ ] Not started |
 | 1D      | [ ] Not started |
 | 2A      | [ ] Not started |
@@ -470,7 +470,15 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1A complete. 27 passing tests.
+**What's built:** Phase 0 + Phase 1A + Phase 1B complete. 53 passing tests.
+
+**Phase 1B additions:** 2 new ORM models (OrgCA, EnrollmentToken). PKI service with AES-256-GCM envelope encryption (PKIMasterKey), CA generation (RSA-4096), CSR signing (2yr validity), device revocation (DB→Redis→audit). Two-part enrollment tokens (Invariant #11): token_id (public, O(1) lookup) + token_secret (bcrypt'd). Device auth dependency (get_mtls_device) with two-tier revocation check: Redis fast path → DB authoritative fallback (Invariant #3). warm_revocation_cache_on_startup in lifespan (Invariant #4). MTLSHeaderGuard with Fly.io internal network detection. Enrollment router (POST /tokens, POST /enroll). Device router stubs (POST /checkin, GET /next-command, POST /job-status). Alembic migration `002_phase_1b` with DB role grants (REVOKE ca_key_encrypted from patchpilot_app, GRANT to patchpilot_pki). 26 new tests covering PKI encrypt/decrypt, CA generation, CSR signing, enrollment token lifecycle, revocation with Redis down, cache warming, mTLS auth.
+
+**Files created in Session 1B:**
+`backend/app/models/org_cas.py`, `backend/app/models/enrollment_tokens.py`, `backend/app/dependencies/redis.py`, `backend/app/dependencies/device_auth.py`, `backend/app/services/pki.py`, `backend/app/schemas/enrollment.py`, `backend/app/routers/enrollment.py`, `backend/app/routers/devices.py`, `backend/migrations/versions/002_phase_1b_pki_schema.py`, `backend/tests/test_1b.py`.
+
+**Files modified in Session 1B:**
+`backend/app/models/__init__.py`, `backend/app/middleware/mtls_guard.py`, `backend/app/main.py`, `CLAUDE.md`.
 
 **Phase 1A additions:** 7 ORM models (Organization, User, Department, Device, AuditLog, DeletionRequest, NIS2Incident), all customer-data models inherit TenantMixin. Alembic migration `001_phase_1a` with compound indexes (`idx_devices_org`, `idx_audit_org_ts`, `idx_users_org`) and audit_log REVOKE. Supabase JWT auth (`get_current_user`, `get_org_scope`, `require_role`). Audit service with CRITICAL_EVENTS blocking (Invariant #10). NIS2 compliance router (create/list/overdue). Supabase Auth hook SQL. 20 new tests covering schema, auth, audit, NIS2 computed columns, tenant isolation.
 
