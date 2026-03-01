@@ -458,7 +458,7 @@ patchpilot/
 | 0-new   | [x] Complete |
 | 1A      | [x] Complete |
 | 1B      | [x] Complete |
-| 1C      | [ ] Not started |
+| 1C      | [x] Complete |
 | 1D      | [ ] Not started |
 | 2A      | [ ] Not started |
 | 2B      | [ ] Not started |
@@ -470,23 +470,21 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1A + Phase 1B complete. 53 passing tests.
+**What's built:** Phase 0 + Phase 1A + Phase 1B + Phase 1C complete. 72 passing tests (57 backend + 15 agent).
 
-**Phase 1B additions:** 2 new ORM models (OrgCA, EnrollmentToken). PKI service with AES-256-GCM envelope encryption (PKIMasterKey), CA generation (RSA-4096), CSR signing (2yr validity), device revocation (DB→Redis→audit). Two-part enrollment tokens (Invariant #11): token_id (public, O(1) lookup) + token_secret (bcrypt'd). Device auth dependency (get_mtls_device) with two-tier revocation check: Redis fast path → DB authoritative fallback (Invariant #3). warm_revocation_cache_on_startup in lifespan (Invariant #4). MTLSHeaderGuard with Fly.io internal network detection. Enrollment router (POST /tokens, POST /enroll). Device router stubs (POST /checkin, GET /next-command, POST /job-status). Alembic migration `002_phase_1b` with DB role grants (REVOKE ca_key_encrypted from patchpilot_app, GRANT to patchpilot_pki). 26 new tests covering PKI encrypt/decrypt, CA generation, CSR signing, enrollment token lifecycle, revocation with Redis down, cache warming, mTLS auth.
+**Phase 1C additions:** 5 agent modules implemented (inventory, kb_collector, telemetry, checkin, main). OS identity + installed apps from registry with winreg guards for Linux CI. Dual-method KB collection: WUA COM API (cap 2000, timeout-guarded) → CBS registry + DISM /get-packages → JSON cache fallback (stale after 8h). Per-job telemetry snapshots: CPU percent, crash events (EventLog 6008/1001/41), reboots (6009/1074), disk free. Delta check-in with SHA-256[:16] per section hash, only changed sections sent, daily 03:00 forced full send. mTLS check-in client with httpx, ±20% jitter, fast cadence (30s for 10min). Agent entry point with enrollment flow (CSR generation, POST /enroll, cert/key/CA save). Backend checkin endpoint updated: delta hash comparison, stale KB annotation (`kbs_stale` flag), Redis commands check. 15 new agent tests + 4 new backend tests, all mocking Windows APIs for Linux CI.
 
-**Files created in Session 1B:**
-`backend/app/models/org_cas.py`, `backend/app/models/enrollment_tokens.py`, `backend/app/dependencies/redis.py`, `backend/app/dependencies/device_auth.py`, `backend/app/services/pki.py`, `backend/app/schemas/enrollment.py`, `backend/app/routers/enrollment.py`, `backend/app/routers/devices.py`, `backend/migrations/versions/002_phase_1b_pki_schema.py`, `backend/tests/test_1b.py`.
+**Files created in Session 1C:**
+`agent/windows/inventory.py`, `agent/windows/kb_collector.py`, `agent/windows/telemetry.py`, `agent/windows/checkin.py`, `agent/windows/main.py`, `agent/tests/conftest.py`, `agent/tests/test_1c.py`, `backend/tests/test_1c_backend.py`.
 
-**Files modified in Session 1B:**
-`backend/app/models/__init__.py`, `backend/app/middleware/mtls_guard.py`, `backend/app/main.py`, `CLAUDE.md`.
+**Files modified in Session 1C:**
+`backend/app/schemas/enrollment.py` (added section_hashes, sections, full_checkin, KBMetadata), `backend/app/routers/devices.py` (delta hash logic, stale KB annotation, Redis commands check), `agent/pyproject.toml` (pytest-asyncio, pytest config), `CLAUDE.md`.
 
-**Phase 1A additions:** 7 ORM models (Organization, User, Department, Device, AuditLog, DeletionRequest, NIS2Incident), all customer-data models inherit TenantMixin. Alembic migration `001_phase_1a` with compound indexes (`idx_devices_org`, `idx_audit_org_ts`, `idx_users_org`) and audit_log REVOKE. Supabase JWT auth (`get_current_user`, `get_org_scope`, `require_role`). Audit service with CRITICAL_EVENTS blocking (Invariant #10). NIS2 compliance router (create/list/overdue). Supabase Auth hook SQL. 20 new tests covering schema, auth, audit, NIS2 computed columns, tenant isolation.
+**Phase 1B additions:** 2 new ORM models (OrgCA, EnrollmentToken). PKI service with AES-256-GCM envelope encryption, CA generation (RSA-4096), CSR signing (2yr validity), device revocation (DB→Redis→audit). Two-part enrollment tokens (Invariant #11). Device auth dependency with two-tier revocation (Invariant #3). warm_revocation_cache_on_startup (Invariant #4). MTLSHeaderGuard with Fly.io internal network detection. Enrollment router + device router stubs. Alembic migration `002_phase_1b`. 26 new tests.
 
-**Files created/modified in Session 1A:**
-`backend/app/models/organizations.py`, `backend/app/models/users.py`, `backend/app/models/departments.py`, `backend/app/models/devices.py`, `backend/app/models/audit_log.py`, `backend/app/models/deletion_requests.py`, `backend/app/models/nis2_incidents.py`, `backend/app/models/__init__.py`, `backend/app/models/base.py` (TimestampMixin), `backend/app/schemas/auth.py`, `backend/app/schemas/compliance.py`, `backend/app/dependencies/auth.py`, `backend/app/services/audit.py`, `backend/app/routers/compliance.py`, `backend/app/config.py`, `backend/app/database.py`, `backend/app/main.py`, `backend/migrations/versions/001_phase_1a_schema.py`, `backend/migrations/env.py`, `backend/tests/conftest.py`, `backend/tests/test_1a.py`, `backend/pyproject.toml`, `supabase/hooks/custom_claims.sql`.
+**Phase 1A additions:** 7 ORM models, TenantMixin, Alembic migration `001_phase_1a`, Supabase JWT auth, audit service with CRITICAL_EVENTS blocking (Invariant #10), NIS2 compliance router. 20 new tests.
 
-**Files created/modified in Session 0-new:**
-`backend/fly.api.toml`, `backend/fly.worker.toml`, `backend/fly.beat.toml`, `backend/app/main.py`, `backend/app/config.py`, `backend/app/database.py`, `backend/app/models/base.py`, `backend/app/routers/health.py`, `backend/app/middleware/hard_header_strip.py`, `backend/app/middleware/mtls_guard.py`, `backend/Dockerfile`, `backend/pyproject.toml`, `backend/alembic.ini`, `backend/migrations/env.py`, `backend/migrations/script.py.mako`, `backend/tests/test_health.py`, `backend/tests/test_hard_header_strip.py`, `backend/tests/test_tenant_mixin.py`, `.github/workflows/test.yml`, `.github/workflows/deploy.yml`, `.github/workflows/release.yml`, `vercel.json`, `supabase/config.toml`, `.env.example`, `Makefile`, `.gitignore`, `agent/` stubs, `frontend/` skeleton.
+**Phase 0 additions:** SaaS skeleton — Fly.io configs, CI/CD, Vercel, Supabase, middleware, health endpoint. 7 tests.
 
 ---
 

@@ -2,7 +2,7 @@
 
 import uuid as _uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -35,10 +35,19 @@ class EnrollResponse(BaseModel):
     checkin_interval: int = 300
 
 
+class KBMetadata(BaseModel):
+    collection_method: str = "none"
+    stale: bool = False
+    cached_at: Optional[str] = None
+    count: int = 0
+
+
 class DeviceCheckinRequest(BaseModel):
     hostname: str
     os_build: Optional[str] = None
-    inventory_section_hashes: Optional[dict] = None
+    section_hashes: Optional[dict[str, str]] = None
+    sections: Optional[dict[str, Any]] = None
+    full_checkin: bool = False
 
 
 class DeviceCheckinResponse(BaseModel):
