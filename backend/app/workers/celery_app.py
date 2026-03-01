@@ -7,6 +7,7 @@ Feed cadence (settled — do not change):
   NVD:  every 6h  — enrichment ONLY (Invariant #9)
   GHSA: daily 03:00 — third-party coverage
   Staleness check: every 1h
+  Recheck unpatched exposures: every 1h (zero-day response)
 """
 
 from celery import Celery
@@ -52,5 +53,9 @@ app.conf.beat_schedule = {
     "check_feed_staleness": {
         "task": "backend.app.workers.tasks.check_feed_staleness",
         "schedule": crontab(minute=0),
+    },
+    "recheck_unpatched_exposures": {
+        "task": "backend.app.workers.tasks.recheck_unpatched_exposures",
+        "schedule": crontab(minute=30),
     },
 }

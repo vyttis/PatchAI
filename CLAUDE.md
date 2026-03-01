@@ -463,22 +463,26 @@ patchpilot/
 | 2A      | [x] Complete |
 | 2B      | [x] Complete |
 | 2C      | [x] Complete |
-| 2D      | [ ] Not started |
+| 2D      | [x] Complete |
 | 3A      | [ ] Not started |
 | 3B      | [ ] Not started |
 | 3C      | [ ] Not started |
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2A + Phase 2B + Phase 2C complete. 110 passing tests (95 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) complete. 115 passing tests (100 backend + 15 agent). Phase 2 Gate passed.
 
-**Phase 2C additions:** `SoftwareNormalizerV2` with 6-level fallback chain (tenant_override→product_code→exact_known_map→publisher_heuristic→fuzzy→unmatched). Two strictly separate matching paths: `vuln_match_os` (KB baseline + OS build → RemediationOsTarget) and `vuln_match_apps` (CPE normalization → VulnerabilityProduct). `compute_urgency_score` per CLAUDE.md formula (with exposure_m tag multiplier). `ensure_unpatched_exposure` creates first-class entity when no remediation exists. `check_fleet_for_kev_exposure` stub replaced with real implementation. Admin endpoints: POST normalization-overrides, GET normalization-review. Device check-in now stores inventory content (`apps_inventory`, `kbs_installed`) in `inventory_section_hashes` JSONB and enqueues matching tasks. 8 integration tests.
+**Phase 2D additions:** Zero-day response workflow. `zeroday_monitor.py`: enhanced `ensure_unpatched_exposure()` with advisory mitigation extraction + audit, `recheck_unpatched_exposures()` Celery Beat hourly loop (auto-transitions open→patched when remediation appears, stores deployment_recommendation in mitigations JSONB), `format_exposure_notification()` with "ZERO-DAY RESPONSE" language (Invariant #14). Exposure router: GET /exposures (list), GET /exposures/{eid} (detail), POST /exposures/{eid}/accept (CRITICAL audit event before status change), GET /exposures/{eid}/history (audit_log recheck trail), GET /dashboard (6-section summary: KEV exposures, unpatched count, top 20 urgent, deployment summary, MTTRem, fleet health). Import bridge in vuln_matching.py → zeroday_monitor.py. 5 integration tests.
 
-**Files created in Session 2C:**
-`backend/app/services/normalization.py`, `backend/app/workers/vuln_matching.py`, `backend/app/routers/normalization.py`, `backend/tests/test_2c.py`.
+**Files created in Session 2D:**
+`backend/app/workers/zeroday_monitor.py`, `backend/app/routers/exposures.py`, `backend/app/schemas/exposures.py`, `backend/tests/test_2d.py`.
 
-**Files modified in Session 2C:**
-`backend/app/workers/tasks.py` (replaced KEV stub, added vuln_match_os/apps tasks), `backend/app/routers/devices.py` (store inventory content + enqueue matching), `backend/app/main.py` (register normalization_router), `CLAUDE.md`.
+**Files modified in Session 2D:**
+`backend/app/workers/vuln_matching.py` (import bridge to zeroday_monitor), `backend/app/workers/tasks.py` (recheck task), `backend/app/workers/celery_app.py` (Beat schedule entry), `backend/app/main.py` (register exposures_router), `CLAUDE.md`.
+
+**Phase 2 Gate:** KEV entry → fleet exposure check → unpatched KEV → UnpatchedExposure created (test 1) → recheck → transitions to patched when KB appears (test 2) → no duplicates (test 3) → accept_risk CRITICAL audit (test 4) → "response" not "detection" language (test 5). All gate items verified.
+
+**Phase 2C summary:** SoftwareNormalizerV2 (6-level fallback), vuln_match_os + vuln_match_apps, compute_urgency_score, ensure_unpatched_exposure, normalization admin endpoints. 8 tests.
 
 **Phase 2B summary:** Celery Beat schedule (6 tasks). Base IntelFetcher + 5 feed subclasses. Staleness monitor. 4 parser contract tests + 7 integration tests.
 

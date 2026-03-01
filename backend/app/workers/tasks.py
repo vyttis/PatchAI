@@ -117,3 +117,19 @@ def vuln_match_apps_task(device_id: str):
             return result
 
     return asyncio.run(_run())
+
+
+@app.task(name="backend.app.workers.tasks.recheck_unpatched_exposures")
+def recheck_unpatched_exposures_task():
+    """Recheck open UnpatchedExposures for newly available patches (every 1h).
+
+    Zero-day RESPONSE workflow: auto-transition to 'patched' when remediation appears.
+    """
+    async def _run():
+        async with async_session() as db:
+            from backend.app.workers.zeroday_monitor import recheck_unpatched_exposures
+            result = await recheck_unpatched_exposures(db)
+            await db.commit()
+            return result
+
+    return asyncio.run(_run())

@@ -307,7 +307,9 @@ async def vuln_match_apps(db: AsyncSession, device_id: _uuid.UUID) -> int:
             if remediation is None:
                 # No remediation → create UnpatchedExposure (first-class entity!)
                 # Language: "zero-day response" — NOT "zero-day detection" (Invariant #14)
-                await ensure_unpatched_exposure(db, vuln.id, device.org_id)
+                await ensure_unpatched_exposure(
+                    db, vuln.id, device.org_id, affected_device_ids=[device_id],
+                )
                 created_count += 1
                 continue
 
@@ -334,38 +336,10 @@ async def vuln_match_apps(db: AsyncSession, device_id: _uuid.UUID) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Shared helpers (only utility — not matching logic)
+# Import bridge: ensure_unpatched_exposure canonical impl in zeroday_monitor
 # ---------------------------------------------------------------------------
 
-
-async def ensure_unpatched_exposure(
-    db: AsyncSession,
-    vuln_id: _uuid.UUID,
-    org_id: _uuid.UUID,
-) -> UnpatchedExposure:
-    """Create or increment an UnpatchedExposure for (org_id, vuln_id).
-
-    UNIQUE constraint on (org_id, vuln_id) ensures no duplicates.
-    """
-    stmt = select(UnpatchedExposure).where(
-        UnpatchedExposure.org_id == org_id,
-        UnpatchedExposure.vuln_id == vuln_id,
-    )
-    result = await db.execute(stmt)
-    existing = result.scalar_one_or_none()
-
-    if existing:
-        existing.affected_count = (existing.affected_count or 0) + 1
-        return existing
-
-    exposure = UnpatchedExposure(
-        org_id=org_id,
-        vuln_id=vuln_id,
-        affected_count=1,
-        status="open",
-    )
-    db.add(exposure)
-    return exposure
+from backend.app.workers.zeroday_monitor import ensure_unpatched_exposure  # noqa: F401, E402
 
 
 # ---------------------------------------------------------------------------
