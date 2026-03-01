@@ -465,22 +465,24 @@ patchpilot/
 | 2C      | [x] Complete |
 | 2D      | [x] Complete |
 | 3A      | [x] Complete |
-| 3B      | [ ] Not started |
+| 3B      | [x] Complete |
 | 3C      | [ ] Not started |
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3A complete. 122 passing tests (107 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3A–3B complete. 129 passing tests (114 backend + 15 agent).
 
-**Phase 3A additions:** Deployment job state machine + ring rollout + anomaly halt. `state_machine.py`: `VALID_TRANSITIONS` map (11 states), `InvalidTransition` exception, `transition()` with audit-before-change (CRITICAL), deferral enforcement (max 3, forced_reboot after). `ring_rollout.py`: `create_deployment_plan()` (canary max(3,1%)/pilot 10%/broad), `dispatch_ring()` (DeploymentJob creation + Redis rpush command + setex fast_cadence 600s), `check_canary_anomaly()` (>20% failure rate + telemetry thresholds: cpu>80, crashes>2, reboots>5, disk<3GB). Deployments router: POST /deployments (CRITICAL audit policy.evaluated before dispatch), POST /approve-next-ring (CRITICAL audit deployment.dispatched, anomaly check gate), GET /deployments/{did} (ring progress + anomaly status). DeploymentJob model extended: completed_at, failure_reason, deferred_count, forced_reboot_at, retry_count, created_by_user_id. Agent patch_executor.py stubs (execute_playbook, 3-path fallback, winget schtasks). `"job.state_changed"` added to CRITICAL_EVENTS. 7 integration tests.
+**Phase 3B additions:** BLPOP command delivery + WebSocket live feed + fast cadence + verify_remediation. `devices.py` rewritten: GET /next-command (BLPOP 55s timeout, always 200 JSON, command=null on timeout — Invariant #12), POST /job-status (ownership validation, telemetry storage, state_machine.transition() with CRITICAL audit, Redis pub/sub publish for WebSocket, enqueue verify_remediation on complete), WebSocket /ws/orgs/{org_id}/deployments (JWT auth from query param, org_id tenant isolation — Invariant #16, Redis pub/sub subscription, real-time job state forwarding). `job_runner.py`: verify_remediation() pushes verify command + 120s fast cadence. DeviceCheckinResponse extended with fast_cadence field. Celery verify_remediation_task added. 7 integration tests.
 
-**Files created in Session 3A:**
-`backend/app/services/state_machine.py`, `backend/app/workers/ring_rollout.py`, `backend/app/routers/deployments.py`, `backend/app/schemas/deployments.py`, `backend/tests/test_3a.py`.
+**Files created in Session 3B:**
+`backend/app/workers/job_runner.py`, `backend/app/schemas/devices.py`, `backend/tests/test_3b.py`.
 
-**Files modified in Session 3A:**
-`backend/app/models/deployment_jobs.py` (6 new columns), `backend/app/services/audit.py` (added job.state_changed to CRITICAL_EVENTS), `backend/app/workers/tasks.py` (check_canary_anomaly_task), `backend/app/main.py` (register deployments_router), `agent/windows/patch_executor.py` (stubs), `backend/tests/test_1a.py` (updated CRITICAL_EVENTS spec), `backend/tests/test_2a.py` (playbook_snapshot NOT NULL), `CLAUDE.md`.
+**Files modified in Session 3B:**
+`backend/app/routers/devices.py` (full rewrite: BLPOP + job-status + WebSocket), `backend/app/workers/tasks.py` (verify_remediation_task), `backend/app/schemas/enrollment.py` (fast_cadence field), `backend/pyproject.toml` (websockets>=14), `CLAUDE.md`.
 
-**Phase 3A Gate:** InvalidTransition raised for illegal state changes (tests 1,2) → audit written BEFORE state change, audit failure blocks transition (test 3) → canary >20% failure → halt (test 4) → canary <20% → pass (test 5) → max 3 deferrals enforced (test 6) → fast_cadence Redis key set on dispatch (test 7). All gate items verified.
+**Phase 3B Gate:** BLPOP timeout returns {command: null} not 204 (test 1) → BLPOP immediate return with command (test 2) → job status transitions + WebSocket publish (test 3) → fast cadence flag in checkin response (test 4) → telemetry stored on job status (test 5) → verify command dispatched with 120s fast cadence (test 6) → WebSocket rejects missing token (test 7). All gate items verified.
+
+**Phase 3A summary:** Deployment job state machine + ring rollout + anomaly halt. 7 tests.
 
 **Phase 2 summary:** Intel pipeline + zero-day response. KEV/MSRC/EPSS/NVD/GHSA feeds, normalization, vuln matching, UnpatchedExposure workflow, exposure API + dashboard. 30 tests.
 

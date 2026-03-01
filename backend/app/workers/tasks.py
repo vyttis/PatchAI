@@ -132,6 +132,28 @@ def check_canary_anomaly_task(remediation_id: str, org_id: str):
     return asyncio.run(_run())
 
 
+@app.task(name="backend.app.workers.tasks.verify_remediation")
+def verify_remediation_task(job_id: str):
+    """Push verify command to agent after job completion."""
+    async def _run():
+        async with async_session() as db:
+            redis_client = None
+            try:
+                from backend.app.config import settings
+                if settings.redis_url:
+                    from redis.asyncio import Redis
+                    redis_client = Redis.from_url(settings.redis_url, decode_responses=True)
+                from backend.app.workers.job_runner import verify_remediation
+                result = await verify_remediation(db, redis_client, UUID(job_id))
+                await db.commit()
+                return result
+            finally:
+                if redis_client:
+                    await redis_client.aclose()
+
+    return asyncio.run(_run())
+
+
 @app.task(name="backend.app.workers.tasks.recheck_unpatched_exposures")
 def recheck_unpatched_exposures_task():
     """Recheck open UnpatchedExposures for newly available patches (every 1h).

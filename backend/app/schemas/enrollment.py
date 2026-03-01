@@ -52,3 +52,4 @@ class DeviceCheckinRequest(BaseModel):
 
 class DeviceCheckinResponse(BaseModel):
     commands_pending: bool = False
+    fast_cadence: bool = False
