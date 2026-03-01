@@ -142,8 +142,8 @@ async def sign_device_csr(
     org_id: _uuid.UUID,
     csr_pem: bytes,
     master_key: PKIMasterKey,
-) -> tuple[str, str]:
-    """Sign a device CSR with the org's CA. Returns (cert_pem, fingerprint).
+) -> tuple[str, str, str]:
+    """Sign a device CSR with the org's CA. Returns (cert_pem, fingerprint, serial).
 
     Decrypts CA private key in memory, signs, then clears key bytes.
     """
