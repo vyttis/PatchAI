@@ -64,8 +64,26 @@ async def device_checkin(
                 # No KB section sent — keep previous stale flag
                 pass
 
+            # Store actual inventory content for vuln matching (Phase 2C)
+            if body.sections:
+                if "apps" in body.sections and isinstance(body.sections["apps"], list):
+                    new_stored["apps_inventory"] = body.sections["apps"]
+                if "kbs" in body.sections:
+                    kb_section = body.sections["kbs"]
+                    if isinstance(kb_section, list):
+                        new_stored["kbs_installed"] = kb_section
+                    elif isinstance(kb_section, dict):
+                        new_stored["kbs_installed"] = kb_section.get("kbs", [])
+
             device.inventory_section_hashes = new_stored
-            # Phase 2: enqueue vuln_match_apps.delay(device.id), vuln_match_os.delay(device.id)
+
+            # Phase 2C: enqueue vulnerability matching
+            try:
+                from backend.app.workers.tasks import vuln_match_apps_task, vuln_match_os_task
+                vuln_match_os_task.delay(str(device.id))
+                vuln_match_apps_task.delay(str(device.id))
+            except Exception:
+                logger.warning("Failed to enqueue vuln matching for device %s", device.id)
 
     await db.commit()
 

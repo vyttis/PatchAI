@@ -5,6 +5,7 @@ Each task wraps the async fetcher logic via asyncio.run().
 
 import asyncio
 import logging
+from uuid import UUID
 
 import httpx
 
@@ -76,8 +77,43 @@ def check_feed_staleness():
 
 @app.task(name="backend.app.workers.tasks.check_fleet_for_kev_exposure")
 def check_fleet_for_kev_exposure(cve_id: str):
-    """Stub — Phase 2C will implement fleet vulnerability matching.
+    """Fleet-wide vulnerability check triggered by new CISA KEV entry.
 
-    Called by KEVFetcher when a new CVE is added to CISA KEV.
+    Finds all devices and runs OS + app matching against the new KEV CVE.
     """
-    logger.info("Phase 2C stub: check_fleet_for_kev_exposure(%s)", cve_id)
+    async def _run():
+        async with async_session() as db:
+            from backend.app.workers.vuln_matching import (
+                check_fleet_for_kev_exposure as _check,
+            )
+            result = await _check(db, cve_id)
+            await db.commit()
+            return result
+
+    return asyncio.run(_run())
+
+
+@app.task(name="backend.app.workers.tasks.vuln_match_os")
+def vuln_match_os_task(device_id: str):
+    """OS-level vulnerability matching for a single device (KB baseline + build)."""
+    async def _run():
+        async with async_session() as db:
+            from backend.app.workers.vuln_matching import vuln_match_os
+            result = await vuln_match_os(db, UUID(device_id))
+            await db.commit()
+            return result
+
+    return asyncio.run(_run())
+
+
+@app.task(name="backend.app.workers.tasks.vuln_match_apps")
+def vuln_match_apps_task(device_id: str):
+    """Third-party app vulnerability matching for a single device (CPE normalization)."""
+    async def _run():
+        async with async_session() as db:
+            from backend.app.workers.vuln_matching import vuln_match_apps
+            result = await vuln_match_apps(db, UUID(device_id))
+            await db.commit()
+            return result
+
+    return asyncio.run(_run())

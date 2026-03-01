@@ -462,7 +462,7 @@ patchpilot/
 | 1D      | [x] Complete |
 | 2A      | [x] Complete |
 | 2B      | [x] Complete |
-| 2C      | [ ] Not started |
+| 2C      | [x] Complete |
 | 2D      | [ ] Not started |
 | 3A      | [ ] Not started |
 | 3B      | [ ] Not started |
@@ -470,19 +470,21 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2A + Phase 2B complete. 102 passing tests (87 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2A + Phase 2B + Phase 2C complete. 110 passing tests (95 backend + 15 agent).
 
-**Phase 2B additions:** Celery app with Beat schedule (6 scheduled tasks: KEV 4h, MSRC 2h, EPSS daily 02:00, NVD 6h, GHSA daily 03:00, staleness check 1h). Base `IntelFetcher` class with full fetch→store→parse→upsert pipeline (Invariants #8, #9, #13 enforced). Five feed subclasses: `KEVFetcher` (enqueues fleet check for new KEV entries), `MSRCFetcher` (5x exponential backoff, Retry-After, 2h Redis cache, intel_last_good fallback), `EPSSFetcher` (gzipped CSV, storage_path for large files), `NVDFetcher` (pagination, rate limiting, enrichment ONLY), `GHSAFetcher` (GraphQL API). Staleness monitor with per-feed thresholds. Celery task wrappers (sync→async via asyncio.run). 4 pinned fixture files + 4 parser contract tests + 7 integration tests.
+**Phase 2C additions:** `SoftwareNormalizerV2` with 6-level fallback chain (tenant_override→product_code→exact_known_map→publisher_heuristic→fuzzy→unmatched). Two strictly separate matching paths: `vuln_match_os` (KB baseline + OS build → RemediationOsTarget) and `vuln_match_apps` (CPE normalization → VulnerabilityProduct). `compute_urgency_score` per CLAUDE.md formula (with exposure_m tag multiplier). `ensure_unpatched_exposure` creates first-class entity when no remediation exists. `check_fleet_for_kev_exposure` stub replaced with real implementation. Admin endpoints: POST normalization-overrides, GET normalization-review. Device check-in now stores inventory content (`apps_inventory`, `kbs_installed`) in `inventory_section_hashes` JSONB and enqueues matching tasks. 8 integration tests.
 
-**Files created in Session 2B:**
-`backend/app/workers/celery_app.py`, `backend/app/workers/intel_fetcher.py`, `backend/app/workers/tasks.py`, `backend/tests/intel/fixtures/kev_sample.json`, `backend/tests/intel/fixtures/msrc_sample.json`, `backend/tests/intel/fixtures/epss_sample.csv.gz`, `backend/tests/intel/fixtures/nvd_sample.json`, `backend/tests/intel/test_parser_contracts.py`, `backend/tests/test_2b.py`.
+**Files created in Session 2C:**
+`backend/app/services/normalization.py`, `backend/app/workers/vuln_matching.py`, `backend/app/routers/normalization.py`, `backend/tests/test_2c.py`.
 
-**Files modified in Session 2B:**
-`backend/app/workers/__init__.py` (Celery app import for discovery), `CLAUDE.md`.
+**Files modified in Session 2C:**
+`backend/app/workers/tasks.py` (replaced KEV stub, added vuln_match_os/apps tasks), `backend/app/routers/devices.py` (store inventory content + enqueue matching), `backend/app/main.py` (register normalization_router), `CLAUDE.md`.
+
+**Phase 2B summary:** Celery Beat schedule (6 tasks). Base IntelFetcher + 5 feed subclasses. Staleness monitor. 4 parser contract tests + 7 integration tests.
 
 **Phase 2A summary:** Intel pipeline schema — 15 new tables, mttrem_by_ring view, metrics router stub. 10 tests.
 
-**Phase 1 summary:** Secure foundation — mTLS enrollment, PKI envelope encryption, delta check-in, deployment packs. 66 backend + 15 agent tests. Audited: all 16 invariants verified.
+**Phase 1 summary:** Secure foundation — mTLS enrollment, PKI envelope encryption, delta check-in, deployment packs. 66 backend + 15 agent tests.
 
 **Phase 0:** SaaS skeleton — Fly.io configs, CI/CD, Vercel, Supabase, middleware. 7 tests.
 
