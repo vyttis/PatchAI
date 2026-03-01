@@ -460,7 +460,7 @@ patchpilot/
 | 1B      | [x] Complete |
 | 1C      | [x] Complete |
 | 1D      | [x] Complete |
-| 2A      | [ ] Not started |
+| 2A      | [x] Complete |
 | 2B      | [ ] Not started |
 | 2C      | [ ] Not started |
 | 2D      | [ ] Not started |
@@ -470,21 +470,17 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) complete. 81 passing tests (66 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2A complete. 91 passing tests (76 backend + 15 agent).
 
-**Phase 1D additions:** AgentVersion model (global, no TenantMixin) + Alembic migration `003_phase_1d`. Deployment pack service: ZIP generator with GPO startup script (SHA256 + Authenticode verification), Intune Win32 manifest (registry detection rule), RMM one-liner, and README. Token management: list active tokens (secrets never returned), revoke by deletion. Agent update check endpoint (mTLS auth, `packaging.version` comparison, `force_update` when below `minimum_supported_version`). Internal release endpoint (`X-Internal-Key` header auth, sets `is_latest` and unsets previous). Config: `INTERNAL_RELEASE_KEY` added. 9 new tests.
+**Phase 2A additions:** Alembic migration `004_phase_2a` with 15 new tables: `vulnerabilities`, `vulnerability_products`, `advisories`, `advisory_vulnerabilities`, `remediations`, `remediation_vulnerabilities`, `remediation_os_targets`, `device_vulnerabilities` (with `mttrem_hours` GENERATED column), `unpatched_exposures` (UNIQUE org_id+vuln_id), `intel_feed_blobs`, `intel_feed_health`, `intel_last_good`, `deployment_jobs`, `software_normalization_log`, `tenant_normalization_overrides`. DB view `mttrem_by_ring` (percentile_cont p50/p90 by ring). Metrics router stub: `GET /api/v1/orgs/{id}/metrics/mttrem?period=30d&group_by=ring&kev_only=false`. Conftest fix: computed columns rendered as regular nullable columns on SQLite (was previously skipping entirely, breaking RETURNING clauses). 10 new tests.
 
-**Files created in Session 1D:**
-`backend/app/models/agent_versions.py`, `backend/app/schemas/deployment_packs.py`, `backend/app/services/deployment_packs.py`, `backend/app/routers/deployment_packs.py`, `backend/migrations/versions/003_phase_1d_agent_versions.py`, `backend/tests/test_1d.py`.
+**Files created in Session 2A:**
+`backend/app/models/vulnerabilities.py`, `backend/app/models/vulnerability_products.py`, `backend/app/models/advisories.py`, `backend/app/models/remediations.py`, `backend/app/models/device_vulnerabilities.py`, `backend/app/models/unpatched_exposures.py`, `backend/app/models/intel_feeds.py`, `backend/app/models/deployment_jobs.py`, `backend/app/models/software_normalization.py`, `backend/app/schemas/metrics.py`, `backend/app/routers/metrics.py`, `backend/migrations/versions/004_phase_2a_intel_schema.py`, `backend/tests/test_2a.py`.
 
-**Files modified in Session 1D:**
-`backend/app/models/__init__.py` (AgentVersion export), `backend/app/config.py` (internal_release_key), `backend/app/main.py` (deployment_packs_router), `.env.example` (INTERNAL_RELEASE_KEY), `CLAUDE.md`.
+**Files modified in Session 2A:**
+`backend/app/models/__init__.py` (all new model exports), `backend/app/main.py` (metrics_router), `backend/tests/conftest.py` (computed column SQLite fix), `CLAUDE.md`.
 
-**Phase 1C:** 5 agent modules (inventory, kb_collector, telemetry, checkin, main). Delta check-in with SHA-256[:16] hashing, dual KB collection (WUA→CBS→cache), per-job telemetry, mTLS httpx client. 15 agent + 4 backend tests.
-
-**Phase 1B:** PKI service (AES-256-GCM envelope encryption), two-part enrollment tokens, device auth with two-tier revocation, MTLSHeaderGuard. 26 tests.
-
-**Phase 1A:** 7 ORM models, TenantMixin, Supabase JWT auth, audit service with CRITICAL_EVENTS blocking. 20 tests.
+**Phase 1 summary:** Secure foundation — mTLS enrollment, PKI envelope encryption, delta check-in, deployment packs. 66 backend + 15 agent tests. Audited: all 16 invariants verified.
 
 **Phase 0:** SaaS skeleton — Fly.io configs, CI/CD, Vercel, Supabase, middleware. 7 tests.
 

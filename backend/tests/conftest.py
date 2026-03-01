@@ -38,10 +38,17 @@ def _compile_array_sqlite(type_, compiler, **kw):
 
 @compiles(CreateColumn, "sqlite")
 def _skip_computed_columns_sqlite(element, compiler, **kw):
-    """Skip Computed columns for SQLite — it doesn't support GENERATED with interval."""
+    """Render Computed columns as regular nullable columns for SQLite.
+
+    SQLite doesn't support GENERATED ALWAYS AS with INTERVAL expressions.
+    Instead of skipping the column entirely (which breaks RETURNING clauses),
+    we emit the column definition without the computed expression.
+    """
     col = element.element
     if getattr(col, "computed", None) is not None:
-        return None
+        col_name = compiler.preparer.format_column(col)
+        col_type = compiler.dialect.type_compiler_instance.process(col.type)
+        return f"\n{col_name} {col_type}"
     return compiler.visit_create_column(element, **kw)
 
 
