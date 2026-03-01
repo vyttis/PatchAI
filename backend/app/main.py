@@ -15,6 +15,7 @@ from backend.app.config import settings
 from backend.app.middleware.hard_header_strip import HardHeaderStrip
 from backend.app.middleware.mtls_guard import MTLSHeaderGuard
 from backend.app.routers.compliance import router as compliance_router
+from backend.app.routers.deployment_packs import router as deployment_packs_router
 from backend.app.routers.devices import router as devices_router
 from backend.app.routers.enrollment import router as enrollment_router
 from backend.app.routers.health import router as health_router
@@ -57,6 +58,7 @@ app.include_router(health_router)
 app.include_router(compliance_router)
 app.include_router(enrollment_router)
 app.include_router(devices_router)
+app.include_router(deployment_packs_router)
 
 # Wrap app with middleware — outermost layer processes first.
 # MTLSHeaderGuard runs after HardHeaderStrip has cleaned headers.

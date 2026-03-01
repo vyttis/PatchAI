@@ -29,6 +29,7 @@ class Settings(BaseSettings):
 
     # --- Internal ---
     secret_key: str = ""  # FastAPI session secret
+    internal_release_key: str = ""  # X-Internal-Key for POST /internal/releases
 
     # --- App ---
     debug: bool = False

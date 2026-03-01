@@ -459,7 +459,7 @@ patchpilot/
 | 1A      | [x] Complete |
 | 1B      | [x] Complete |
 | 1C      | [x] Complete |
-| 1D      | [ ] Not started |
+| 1D      | [x] Complete |
 | 2A      | [ ] Not started |
 | 2B      | [ ] Not started |
 | 2C      | [ ] Not started |
@@ -470,21 +470,23 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1A + Phase 1B + Phase 1C complete. 72 passing tests (57 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) complete. 81 passing tests (66 backend + 15 agent).
 
-**Phase 1C additions:** 5 agent modules implemented (inventory, kb_collector, telemetry, checkin, main). OS identity + installed apps from registry with winreg guards for Linux CI. Dual-method KB collection: WUA COM API (cap 2000, timeout-guarded) → CBS registry + DISM /get-packages → JSON cache fallback (stale after 8h). Per-job telemetry snapshots: CPU percent, crash events (EventLog 6008/1001/41), reboots (6009/1074), disk free. Delta check-in with SHA-256[:16] per section hash, only changed sections sent, daily 03:00 forced full send. mTLS check-in client with httpx, ±20% jitter, fast cadence (30s for 10min). Agent entry point with enrollment flow (CSR generation, POST /enroll, cert/key/CA save). Backend checkin endpoint updated: delta hash comparison, stale KB annotation (`kbs_stale` flag), Redis commands check. 15 new agent tests + 4 new backend tests, all mocking Windows APIs for Linux CI.
+**Phase 1D additions:** AgentVersion model (global, no TenantMixin) + Alembic migration `003_phase_1d`. Deployment pack service: ZIP generator with GPO startup script (SHA256 + Authenticode verification), Intune Win32 manifest (registry detection rule), RMM one-liner, and README. Token management: list active tokens (secrets never returned), revoke by deletion. Agent update check endpoint (mTLS auth, `packaging.version` comparison, `force_update` when below `minimum_supported_version`). Internal release endpoint (`X-Internal-Key` header auth, sets `is_latest` and unsets previous). Config: `INTERNAL_RELEASE_KEY` added. 9 new tests.
 
-**Files created in Session 1C:**
-`agent/windows/inventory.py`, `agent/windows/kb_collector.py`, `agent/windows/telemetry.py`, `agent/windows/checkin.py`, `agent/windows/main.py`, `agent/tests/conftest.py`, `agent/tests/test_1c.py`, `backend/tests/test_1c_backend.py`.
+**Files created in Session 1D:**
+`backend/app/models/agent_versions.py`, `backend/app/schemas/deployment_packs.py`, `backend/app/services/deployment_packs.py`, `backend/app/routers/deployment_packs.py`, `backend/migrations/versions/003_phase_1d_agent_versions.py`, `backend/tests/test_1d.py`.
 
-**Files modified in Session 1C:**
-`backend/app/schemas/enrollment.py` (added section_hashes, sections, full_checkin, KBMetadata), `backend/app/routers/devices.py` (delta hash logic, stale KB annotation, Redis commands check), `agent/pyproject.toml` (pytest-asyncio, pytest config), `CLAUDE.md`.
+**Files modified in Session 1D:**
+`backend/app/models/__init__.py` (AgentVersion export), `backend/app/config.py` (internal_release_key), `backend/app/main.py` (deployment_packs_router), `.env.example` (INTERNAL_RELEASE_KEY), `CLAUDE.md`.
 
-**Phase 1B additions:** 2 new ORM models (OrgCA, EnrollmentToken). PKI service with AES-256-GCM envelope encryption, CA generation (RSA-4096), CSR signing (2yr validity), device revocation (DB→Redis→audit). Two-part enrollment tokens (Invariant #11). Device auth dependency with two-tier revocation (Invariant #3). warm_revocation_cache_on_startup (Invariant #4). MTLSHeaderGuard with Fly.io internal network detection. Enrollment router + device router stubs. Alembic migration `002_phase_1b`. 26 new tests.
+**Phase 1C:** 5 agent modules (inventory, kb_collector, telemetry, checkin, main). Delta check-in with SHA-256[:16] hashing, dual KB collection (WUA→CBS→cache), per-job telemetry, mTLS httpx client. 15 agent + 4 backend tests.
 
-**Phase 1A additions:** 7 ORM models, TenantMixin, Alembic migration `001_phase_1a`, Supabase JWT auth, audit service with CRITICAL_EVENTS blocking (Invariant #10), NIS2 compliance router. 20 new tests.
+**Phase 1B:** PKI service (AES-256-GCM envelope encryption), two-part enrollment tokens, device auth with two-tier revocation, MTLSHeaderGuard. 26 tests.
 
-**Phase 0 additions:** SaaS skeleton — Fly.io configs, CI/CD, Vercel, Supabase, middleware, health endpoint. 7 tests.
+**Phase 1A:** 7 ORM models, TenantMixin, Supabase JWT auth, audit service with CRITICAL_EVENTS blocking. 20 tests.
+
+**Phase 0:** SaaS skeleton — Fly.io configs, CI/CD, Vercel, Supabase, middleware. 7 tests.
 
 ---
 

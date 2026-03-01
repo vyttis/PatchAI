@@ -1,5 +1,6 @@
 """PatchPilot ORM models — all customer-data models inherit TenantMixin."""
 
+from backend.app.models.agent_versions import AgentVersion
 from backend.app.models.audit_log import AuditLog
 from backend.app.models.base import TenantMixin, TimestampMixin
 from backend.app.models.deletion_requests import DeletionRequest
@@ -12,6 +13,7 @@ from backend.app.models.organizations import Organization
 from backend.app.models.users import User
 
 __all__ = [
+    "AgentVersion",
     "AuditLog",
     "DeletionRequest",
     "Department",
