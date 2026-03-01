@@ -466,23 +466,23 @@ patchpilot/
 | 2D      | [x] Complete |
 | 3A      | [x] Complete |
 | 3B      | [x] Complete |
-| 3C      | [ ] Not started |
+| 3C      | [x] Complete |
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3A–3B complete. 129 passing tests (114 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3 (3A–3C) complete. 135 passing tests (120 backend + 15 agent).
 
-**Phase 3B additions:** BLPOP command delivery + WebSocket live feed + fast cadence + verify_remediation. `devices.py` rewritten: GET /next-command (BLPOP 55s timeout, always 200 JSON, command=null on timeout — Invariant #12), POST /job-status (ownership validation, telemetry storage, state_machine.transition() with CRITICAL audit, Redis pub/sub publish for WebSocket, enqueue verify_remediation on complete), WebSocket /ws/orgs/{org_id}/deployments (JWT auth from query param, org_id tenant isolation — Invariant #16, Redis pub/sub subscription, real-time job state forwarding). `job_runner.py`: verify_remediation() pushes verify command + 120s fast cadence. DeviceCheckinResponse extended with fast_cadence field. Celery verify_remediation_task added. 7 integration tests.
+**Phase 3C additions:** Dashboard API completion + compliance/reporting endpoints + MTTRem analytics + GDPR + asset management. `metrics.py` rewritten: `_percentile()` helper for SQLite-compatible p50/p90, `_compute_group_stats()`, multi-dimension `group_by=ring,criticality` with Python-side aggregation. `exposures.py` dashboard stubs completed: mttrem p50/p90/kev_p50 from real DB queries, completed_24h/failed_24h from DeploymentJob, overdue_critical_devices from Device. `reports.py` router created: compliance evidence CSV (StreamingResponse), NIS2 summary (overdue flags, incident_reporting_compliance), compliance report (patch rates, top unresolved), KEV history, exposure timeline, GDPR deletion requests (org + user), asset management (criticality/tags with urgency recalculation, departments). 6 integration tests.
 
-**Files created in Session 3B:**
-`backend/app/workers/job_runner.py`, `backend/app/schemas/devices.py`, `backend/tests/test_3b.py`.
+**Files created in Session 3C:**
+`backend/app/routers/reports.py`, `backend/app/schemas/reports.py`, `backend/tests/test_3c.py`.
 
-**Files modified in Session 3B:**
-`backend/app/routers/devices.py` (full rewrite: BLPOP + job-status + WebSocket), `backend/app/workers/tasks.py` (verify_remediation_task), `backend/app/schemas/enrollment.py` (fast_cadence field), `backend/pyproject.toml` (websockets>=14), `CLAUDE.md`.
+**Files modified in Session 3C:**
+`backend/app/routers/metrics.py` (full rewrite: percentile computation, multi-dimension grouping), `backend/app/routers/exposures.py` (dashboard stubs completed with real DB queries), `backend/app/schemas/metrics.py` (MTTRemGroupRow + top-level aggregates), `backend/app/main.py` (reports_router registered), `CLAUDE.md`.
 
-**Phase 3B Gate:** BLPOP timeout returns {command: null} not 204 (test 1) → BLPOP immediate return with command (test 2) → job status transitions + WebSocket publish (test 3) → fast cadence flag in checkin response (test 4) → telemetry stored on job status (test 5) → verify command dispatched with 120s fast cadence (test 6) → WebSocket rejects missing token (test 7). All gate items verified.
+**Phase 3C Gate:** Dashboard KEV count correct (test 1) → MTTRem p50=6.0 with seeded [2,4,6,8,10] dataset (test 2) → Compliance CSV valid headers + data (test 3) → NIS2 overdue flagged for 48h-old incident (test 4) → Criticality change standard→critical increases urgency ~1.5x (test 5) → Empty dataset returns empty list (test 6). All gate items verified.
 
-**Phase 3A summary:** Deployment job state machine + ring rollout + anomaly halt. 7 tests.
+**Phase 3 complete.** Gate: Canary >20% failure halts before pilot (3A) → fast cadence <35s (3B) → MTTRem computes correctly (3C test 2) → WebSocket live <3s (3B) → Dashboard KEV count correct (3C test 1) → Compliance CSV valid (3C test 3) → NIS2 overdue flagged (3C test 4) → Urgency recalculated on criticality change (3C test 5).
 
 **Phase 2 summary:** Intel pipeline + zero-day response. KEV/MSRC/EPSS/NVD/GHSA feeds, normalization, vuln matching, UnpatchedExposure workflow, exposure API + dashboard. 30 tests.
 

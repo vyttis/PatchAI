@@ -37,6 +37,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/orgs/{org_id}", tags=["exposures"])
 
 
+def _percentile(sorted_values: list[float], pct: float):
+    """Compute percentile from sorted list. SQLite-compatible (no percentile_cont)."""
+    if not sorted_values:
+        return None
+    n = len(sorted_values)
+    k = (n - 1) * pct
+    f = int(k)
+    c = f + 1
+    if c >= n:
+        return round(sorted_values[f], 2)
+    return round(sorted_values[f] + (k - f) * (sorted_values[c] - sorted_values[f]), 2)
+
+
 # ---------------------------------------------------------------------------
 # GET /exposures — list open + recently closed (30d)
 # ---------------------------------------------------------------------------
@@ -369,16 +382,44 @@ async def get_dashboard(
     deploy_result = await db.execute(deploy_stmt)
     deploy_counts = {row[0]: row[1] for row in deploy_result.all()}
     active_states = {"queued", "downloading", "installing", "pending_reboot", "verifying"}
+
+    # Completed in last 24h
+    completed_24h_stmt = (
+        select(func.count())
+        .select_from(DeploymentJob)
+        .where(
+            DeploymentJob.org_id == scope.org_id,
+            DeploymentJob.state == "complete",
+            DeploymentJob.completed_at >= cutoff_24h,
+        )
+    )
+    completed_24h = (await db.execute(completed_24h_stmt)).scalar() or 0
+
+    # Failed in last 24h
+    failed_24h_stmt = (
+        select(func.count())
+        .select_from(DeploymentJob)
+        .where(
+            DeploymentJob.org_id == scope.org_id,
+            DeploymentJob.state.in_(["failed", "failed_final"]),
+            DeploymentJob.state_updated_at >= cutoff_24h,
+        )
+    )
+    failed_24h = (await db.execute(failed_24h_stmt)).scalar() or 0
+
     deployment_summary = {
         "active": sum(deploy_counts.get(s, 0) for s in active_states),
-        "completed_24h": 0,
-        "failed_24h": 0,
+        "completed_24h": completed_24h,
+        "failed_24h": failed_24h,
         "pending_approval": 0,
     }
 
-    # 5. MTTRem (30d)
-    mttrem_stmt = (
-        select(func.count())
+    # 5. MTTRem (30d) — compute p50/p90 in Python for SQLite compatibility
+    mttrem_hours_expr = (
+        func.extract("epoch", DeviceVulnerability.patched_at - DeviceVulnerability.signal_ingested_at) / 3600
+    )
+    mttrem_all_stmt = (
+        select(mttrem_hours_expr.label("hours"))
         .select_from(DeviceVulnerability)
         .where(
             DeviceVulnerability.org_id == scope.org_id,
@@ -387,13 +428,31 @@ async def get_dashboard(
             DeviceVulnerability.patched_at >= cutoff_30d,
         )
     )
-    mttrem_count = (await db.execute(mttrem_stmt)).scalar() or 0
+    mttrem_result = await db.execute(mttrem_all_stmt)
+    all_hours = sorted(float(r.hours) for r in mttrem_result.all() if r.hours is not None and r.hours >= 0)
+
+    # KEV-only MTTRem
+    mttrem_kev_stmt = (
+        select(mttrem_hours_expr.label("hours"))
+        .select_from(DeviceVulnerability)
+        .join(Vulnerability, Vulnerability.id == DeviceVulnerability.vuln_id)
+        .where(
+            DeviceVulnerability.org_id == scope.org_id,
+            DeviceVulnerability.patched_at.isnot(None),
+            DeviceVulnerability.signal_ingested_at.isnot(None),
+            DeviceVulnerability.patched_at >= cutoff_30d,
+            Vulnerability.in_cisa_kev == True,  # noqa: E712
+        )
+    )
+    kev_result = await db.execute(mttrem_kev_stmt)
+    kev_hours = sorted(float(r.hours) for r in kev_result.all() if r.hours is not None and r.hours >= 0)
+
     mttrem = {
-        "p50_hours": None,
-        "p90_hours": None,
-        "kev_p50_hours": None,
+        "p50_hours": _percentile(all_hours, 0.5),
+        "p90_hours": _percentile(all_hours, 0.9),
+        "kev_p50_hours": _percentile(kev_hours, 0.5),
         "period_days": 30,
-        "sample_count": mttrem_count,
+        "sample_count": len(all_hours),
     }
 
     # 6. Fleet health
@@ -414,10 +473,22 @@ async def get_dashboard(
     )
     checked_in_24h = (await db.execute(checked_in_24h_stmt)).scalar() or 0
 
+    # Overdue critical devices: criticality=critical AND not seen in 24h
+    overdue_critical_stmt = (
+        select(func.count())
+        .select_from(Device)
+        .where(
+            Device.org_id == scope.org_id,
+            Device.criticality == "critical",
+            (Device.last_seen_at <= cutoff_24h) | (Device.last_seen_at.is_(None)),
+        )
+    )
+    overdue_critical = (await db.execute(overdue_critical_stmt)).scalar() or 0
+
     fleet_health = {
         "total_devices": total_devices,
         "checked_in_24h": checked_in_24h,
-        "overdue_critical_devices": 0,
+        "overdue_critical_devices": overdue_critical,
     }
 
     return DashboardResponse(

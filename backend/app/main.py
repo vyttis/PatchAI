@@ -23,6 +23,7 @@ from backend.app.routers.metrics import router as metrics_router
 from backend.app.routers.deployments import router as deployments_router
 from backend.app.routers.exposures import router as exposures_router
 from backend.app.routers.normalization import router as normalization_router
+from backend.app.routers.reports import router as reports_router
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,7 @@ app.include_router(metrics_router)
 app.include_router(normalization_router)
 app.include_router(exposures_router)
 app.include_router(deployments_router)
+app.include_router(reports_router)
 
 # Wrap app with middleware — outermost layer processes first.
 # MTLSHeaderGuard runs after HardHeaderStrip has cleaned headers.
