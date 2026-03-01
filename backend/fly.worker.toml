@@ -1,0 +1,20 @@
+# Fly.io config for patchpilot-worker (Celery workers)
+# Region: Frankfurt (fra) — EU data residency (Invariant #15)
+
+app = "patchpilot-worker"
+primary_region = "fra"
+kill_signal = "SIGTERM"
+kill_timeout = 60
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  CELERY_WORKER = "true"
+
+[processes]
+  worker = "celery -A backend.app.workers worker --loglevel=info --concurrency=4"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

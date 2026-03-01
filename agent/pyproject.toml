@@ -1,0 +1,30 @@
+[project]
+name = "patchpilot-agent"
+version = "0.1.0"
+description = "PatchPilot Windows Agent — mTLS check-in, inventory, patch execution"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28",
+    "psutil>=6.1",
+    "cryptography>=44",
+]
+
+[project.optional-dependencies]
+windows = [
+    "pywin32>=308",
+]
+build = [
+    "pyinstaller>=6.11",
+]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

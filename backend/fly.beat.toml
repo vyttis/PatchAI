@@ -1,0 +1,21 @@
+# Fly.io config for patchpilot-beat (Celery Beat scheduler)
+# Region: Frankfurt (fra) — EU data residency (Invariant #15)
+# IMPORTANT: Exactly 1 instance only — never scale beyond 1.
+
+app = "patchpilot-beat"
+primary_region = "fra"
+kill_signal = "SIGTERM"
+kill_timeout = 30
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  CELERY_BEAT = "true"
+
+[processes]
+  beat = "celery -A backend.app.workers beat --loglevel=info"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

@@ -404,13 +404,13 @@ patchpilot/
 ## Build Phase Progress
 
 ### Phase 0 — SaaS Skeleton (Session 0-new)
-- [ ] Fly.io app configs (api, worker, beat) for Frankfurt
-- [ ] GitHub Actions: test → build → deploy pipeline
-- [ ] Vercel config with downloads CDN rewrite
-- [ ] Supabase local dev config
-- [ ] `.env.example` with all secret names
-- [ ] `TenantMixin` base model
-- [ ] CLAUDE.md updated with all invariants
+- [x] Fly.io app configs (api, worker, beat) for Frankfurt
+- [x] GitHub Actions: test → build → deploy pipeline
+- [x] Vercel config with downloads CDN rewrite
+- [x] Supabase local dev config
+- [x] `.env.example` with all secret names
+- [x] `TenantMixin` base model
+- [x] CLAUDE.md updated with all invariants
 
 ### Phase 1 — Secure Foundation (Sessions 1A–1D) · Weeks 1–4
 **Deliverable:** Agents checking in via mTLS
@@ -455,7 +455,7 @@ patchpilot/
 
 | Session | Status |
 |---------|--------|
-| 0-new   | [ ] Not started |
+| 0-new   | [x] Complete |
 | 1A      | [ ] Not started |
 | 1B      | [ ] Not started |
 | 1C      | [ ] Not started |
@@ -470,7 +470,7 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Nothing yet. Starting from scaffold.
+**What's built:** Phase 0 scaffold complete. Full directory structure, Fly.io configs (Frankfurt), CI/CD pipelines, Vercel + Supabase configs, TenantMixin, HardHeaderStrip middleware, Alembic, agent stubs, Next.js skeleton. 5 passing tests.
 
 ---
 

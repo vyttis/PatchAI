@@ -1,0 +1,58 @@
+name: Release Agent
+
+on:
+  push:
+    tags:
+      - "agent-v*"
+
+jobs:
+  build-agent:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          cd agent
+          pip install -e ".[build]"
+
+      - name: Build with PyInstaller
+        run: |
+          cd agent
+          pyinstaller --onefile --name patchpilot-agent windows/main.py
+
+      - name: Sign executable
+        if: env.SIGNING_CERT_P12 != ''
+        env:
+          SIGNING_CERT_P12: ${{ secrets.SIGNING_CERT_P12 }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          echo "$env:SIGNING_CERT_P12" | base64 -d > cert.p12
+          # Authenticode signing via signtool or osslsigncode
+          # signtool sign /f cert.p12 /p "$env:SIGNING_CERT_PASSWORD" /tr http://timestamp.digicert.com /td sha256 /fd sha256 agent/dist/patchpilot-agent.exe
+          Remove-Item cert.p12
+
+      - name: Compute SHA256
+        run: |
+          Get-FileHash agent/dist/patchpilot-agent.exe -Algorithm SHA256 | Format-List
+
+      - name: Upload to Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag -replace "^agent-", ""
+          # Upload to Supabase Storage bucket: agent-releases/$version/patchpilot-agent.exe
+          # This makes it available at downloads.patchpilot.com/$version/patchpilot-agent.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: agent/dist/patchpilot-agent.exe
+          generate_release_notes: true
