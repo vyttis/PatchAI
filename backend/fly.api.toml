@@ -12,14 +12,23 @@ kill_timeout = 30
 [env]
   PORT = "8000"
 
-[http_service]
+[[services]]
   internal_port = 8000
-  force_https = true
-  auto_stop_machines = "stop"
-  auto_start_machines = true
-  min_machines_running = 1
+  protocol = "tcp"
+  min_machines_running = 2
 
-  [http_service.concurrency]
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.http_checks]]
+    interval = 15000
+    timeout = 5000
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+  [services.concurrency]
     type = "requests"
     hard_limit = 250
     soft_limit = 200

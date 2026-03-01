@@ -1,6 +1,7 @@
 # Fly.io config for patchpilot-beat (Celery Beat scheduler)
 # Region: Frankfurt (fra) — EU data residency (Invariant #15)
-# IMPORTANT: Exactly 1 instance only — never scale beyond 1.
+# IMPORTANT: Exactly 1 instance only — Beat must not run as multiple instances.
+# No public ports — internal only.
 
 app = "patchpilot-beat"
 primary_region = "fra"
@@ -19,3 +20,4 @@ kill_timeout = 30
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256mb"
+  min_machines_running = 1

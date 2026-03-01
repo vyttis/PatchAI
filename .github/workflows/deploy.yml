@@ -9,9 +9,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
   deploy-api:
     runs-on: ubuntu-latest
-    needs: []  # Will depend on test workflow via branch protection
+    needs: [test]
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +44,7 @@ jobs:
 
   deploy-beat:
     runs-on: ubuntu-latest
-    needs: [deploy-api]
+    needs: [deploy-worker]
     steps:
       - uses: actions/checkout@v4
 

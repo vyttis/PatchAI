@@ -3,7 +3,7 @@ name: Release Agent
 on:
   push:
     tags:
-      - "agent-v*"
+      - "v*.*.*"
 
 jobs:
   build-agent:
@@ -26,7 +26,7 @@ jobs:
           cd agent
           pyinstaller --onefile --name patchpilot-agent windows/main.py
 
-      - name: Sign executable
+      - name: Sign executable (placeholder — requires SIGNING_CERT_P12)
         if: env.SIGNING_CERT_P12 != ''
         env:
           SIGNING_CERT_P12: ${{ secrets.SIGNING_CERT_P12 }}
@@ -46,8 +46,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
-          $tag = "${{ github.ref_name }}"
-          $version = $tag -replace "^agent-", ""
+          $version = "${{ github.ref_name }}"
           # Upload to Supabase Storage bucket: agent-releases/$version/patchpilot-agent.exe
           # This makes it available at downloads.patchpilot.com/$version/patchpilot-agent.exe
 

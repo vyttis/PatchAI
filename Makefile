@@ -1,17 +1,23 @@
-.PHONY: help dev-api dev-worker dev-beat dev-frontend test-backend test-frontend lint migrate
+.PHONY: help dev dev-api dev-worker dev-beat dev-frontend test test-backend test-frontend lint migrate deploy-api deploy-worker deploy-beat
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # --- Development ---
 
-dev-api: ## Run FastAPI dev server
+dev: ## Run supabase + uvicorn + celery worker locally
+	supabase start & \
+	cd backend && uvicorn backend.app.main:app_with_middleware --reload --host 0.0.0.0 --port 8000 & \
+	cd backend && celery -A backend.app.workers worker --loglevel=info & \
+	wait
+
+dev-api: ## Run FastAPI dev server only
 	cd backend && uvicorn backend.app.main:app_with_middleware --reload --host 0.0.0.0 --port 8000
 
-dev-worker: ## Run Celery worker
+dev-worker: ## Run Celery worker only
 	cd backend && celery -A backend.app.workers worker --loglevel=info
 
-dev-beat: ## Run Celery Beat scheduler
+dev-beat: ## Run Celery Beat scheduler only
 	cd backend && celery -A backend.app.workers beat --loglevel=info
 
 dev-frontend: ## Run Next.js dev server
@@ -19,10 +25,13 @@ dev-frontend: ## Run Next.js dev server
 
 # --- Testing ---
 
-test-backend: ## Run backend tests
-	cd backend && pytest -v
+test: ## Run backend tests
+	cd backend && pytest backend/tests/ -v
 
-test-frontend: ## Run frontend tests
+test-backend: ## Run backend tests (alias)
+	cd backend && pytest backend/tests/ -v
+
+test-frontend: ## Run frontend lint and build
 	cd frontend && npm run lint && npm run build
 
 lint: ## Lint all code

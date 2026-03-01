@@ -5,6 +5,10 @@
   "installCommand": "cd frontend && npm install",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://api.patchpilot.com/api/:path*"
+    },
+    {
       "source": "/downloads/:path*",
       "destination": "https://your-project.supabase.co/storage/v1/object/public/agent-releases/:path*"
     }

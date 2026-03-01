@@ -1,29 +1,28 @@
 """Base model mixins for PatchPilot ORM models."""
 
-import uuid
+import uuid as _uuid
 
-from sqlalchemy import Column, text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class TenantMixin:
     """Mixin that enforces tenant isolation on every customer-data table.
 
-    Every table inheriting this mixin will have an org_id NOT NULL column.
-    Every query MUST include WHERE org_id = scope.org_id.
-    Cross-org leak = existential incident. (Invariant #16)
+    ALL customer-data models MUST inherit this mixin. This is required by
+    Security Invariant #16: every customer-data table has org_id NOT NULL,
+    every router uses get_org_scope(), every DB query includes
+    WHERE org_id = scope.org_id. Cross-org leak = existential incident.
     """
 
-    org_id = Column(
-        UUID(as_uuid=True),
+    org_id: Mapped[_uuid.UUID] = mapped_column(
+        Uuid,
         nullable=False,
         index=True,
-        server_default=text("gen_random_uuid()"),
-        comment="Tenant isolation key — every query must filter on this",
     )
 
     @classmethod
-    def _validate_org_scope(cls, org_id: uuid.UUID) -> None:
+    def _validate_org_scope(cls, org_id: _uuid.UUID) -> None:
         """Guard: raise if org_id is None. Call before every query."""
         if org_id is None:
             raise ValueError(

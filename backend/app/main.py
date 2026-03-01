@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from backend.app.config import settings
 from backend.app.middleware.hard_header_strip import HardHeaderStrip
 from backend.app.middleware.mtls_guard import MTLSHeaderGuard
+from backend.app.routers.health import router as health_router
 
 
 @asynccontextmanager
@@ -30,11 +31,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-@app.get("/health")
-async def health():
-    return {"status": "ok", "version": "0.1.0"}
-
+app.include_router(health_router)
 
 # Wrap app with middleware — outermost layer processes first.
 # MTLSHeaderGuard runs after HardHeaderStrip has cleaned headers.

@@ -470,7 +470,10 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 scaffold complete. Full directory structure, Fly.io configs (Frankfurt), CI/CD pipelines, Vercel + Supabase configs, TenantMixin, HardHeaderStrip middleware, Alembic, agent stubs, Next.js skeleton. 5 passing tests.
+**What's built:** Phase 0 scaffold complete. Fly.io configs (api: TLS+HTTP port 443 min 2, worker: internal min 2, beat: internal min 1), health check at GET /health every 15s, CI/CD (test on all branches, deploy sequential test→api→worker→beat, release on v*.*.* tags), Vercel /api/* rewrite to api.patchpilot.com + /downloads/* rewrite, Supabase local dev, .env.example with all 12 secrets, TenantMixin (mapped_column, Invariant #16 docstring), HardHeaderStrip middleware, health router, Alembic, agent stubs, Next.js skeleton, Makefile with dev/test/deploy targets. 7 passing tests.
+
+**Files created/modified in Session 0-new:**
+`backend/fly.api.toml`, `backend/fly.worker.toml`, `backend/fly.beat.toml`, `backend/app/main.py`, `backend/app/config.py`, `backend/app/database.py`, `backend/app/models/base.py`, `backend/app/routers/health.py`, `backend/app/middleware/hard_header_strip.py`, `backend/app/middleware/mtls_guard.py`, `backend/Dockerfile`, `backend/pyproject.toml`, `backend/alembic.ini`, `backend/migrations/env.py`, `backend/migrations/script.py.mako`, `backend/tests/test_health.py`, `backend/tests/test_hard_header_strip.py`, `backend/tests/test_tenant_mixin.py`, `.github/workflows/test.yml`, `.github/workflows/deploy.yml`, `.github/workflows/release.yml`, `vercel.json`, `supabase/config.toml`, `.env.example`, `Makefile`, `.gitignore`, `agent/` stubs, `frontend/` skeleton.
 
 ---
 

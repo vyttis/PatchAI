@@ -1,5 +1,6 @@
 # Fly.io config for patchpilot-worker (Celery workers)
 # Region: Frankfurt (fra) — EU data residency (Invariant #15)
+# No public ports — internal only.
 
 app = "patchpilot-worker"
 primary_region = "fra"
@@ -18,3 +19,4 @@ kill_timeout = 60
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"
+  min_machines_running = 2
