@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_key: str = ""  # server-side only, never NEXT_PUBLIC_
     supabase_jwt_secret: str = ""  # for FastAPI JWT validation
-    database_url: str = ""  # Supabase PgBouncer pooled connection string
+    database_url: str = "sqlite+aiosqlite://"  # Supabase PgBouncer pooled connection string
 
     # --- Queue ---
     redis_url: str = ""  # Upstash Frankfurt

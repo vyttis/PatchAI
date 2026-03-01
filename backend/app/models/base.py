@@ -1,8 +1,9 @@
 """Base model mixins for PatchPilot ORM models."""
 
 import uuid as _uuid
+from datetime import datetime
 
-from sqlalchemy import Uuid
+from sqlalchemy import Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -29,3 +30,12 @@ class TenantMixin:
                 f"{cls.__name__}: org_id must not be None. "
                 "Every query requires tenant scoping (Invariant #16)."
             )
+
+
+class TimestampMixin:
+    """Adds created_at column with server-side default."""
+
+    created_at: Mapped[datetime] = mapped_column(
+        default=None,
+        server_default=func.now(),
+    )

@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from backend.app.config import settings
 from backend.app.middleware.hard_header_strip import HardHeaderStrip
 from backend.app.middleware.mtls_guard import MTLSHeaderGuard
+from backend.app.routers.compliance import router as compliance_router
 from backend.app.routers.health import router as health_router
 
 
@@ -32,6 +33,7 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
+app.include_router(compliance_router)
 
 # Wrap app with middleware — outermost layer processes first.
 # MTLSHeaderGuard runs after HardHeaderStrip has cleaned headers.
