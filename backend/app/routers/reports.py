@@ -42,23 +42,12 @@ from backend.app.schemas.reports import (
     KEVHistoryRow,
     NIS2ComplianceSummary,
 )
+from backend.app.services.stats import parse_period as _parse_period
+from backend.app.services.stats import percentile as _percentile
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["reports"])
-
-
-def _percentile(sorted_values: list[float], pct: float):
-    """Compute percentile from sorted list. SQLite-compatible."""
-    if not sorted_values:
-        return None
-    n = len(sorted_values)
-    k = (n - 1) * pct
-    f = int(k)
-    c = f + 1
-    if c >= n:
-        return round(sorted_values[f], 2)
-    return round(sorted_values[f] + (k - f) * (sorted_values[c] - sorted_values[f]), 2)
 
 
 # ---------------------------------------------------------------------------
@@ -267,16 +256,6 @@ async def nis2_compliance_summary(
 # ---------------------------------------------------------------------------
 # Reports: Compliance, KEV History, Exposure Timeline
 # ---------------------------------------------------------------------------
-
-
-def _parse_period(period: str) -> int:
-    period = period.strip().lower()
-    if period.endswith("d"):
-        try:
-            return int(period[:-1])
-        except ValueError:
-            return 30
-    return 30
 
 
 @router.get("/api/v1/orgs/{org_id}/reports/compliance", response_model=ComplianceReport)

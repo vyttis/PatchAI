@@ -21,37 +21,10 @@ from backend.app.models.devices import Device
 from backend.app.models.vulnerabilities import Vulnerability
 from backend.app.schemas.auth import OrgScope
 from backend.app.schemas.metrics import MTTRemGroupRow, MTTRemResponse
+from backend.app.services.stats import parse_period as _parse_period
+from backend.app.services.stats import percentile as _percentile
 
 router = APIRouter(prefix="/api/v1/orgs/{org_id}", tags=["metrics"])
-
-
-# ---------------------------------------------------------------------------
-# Percentile helper (SQLite-compatible — no percentile_cont)
-# ---------------------------------------------------------------------------
-
-
-def _percentile(sorted_values: list[float], pct: float) -> Optional[float]:
-    """Compute percentile from sorted list using linear interpolation."""
-    if not sorted_values:
-        return None
-    n = len(sorted_values)
-    k = (n - 1) * pct
-    f = int(k)
-    c = f + 1
-    if c >= n:
-        return round(sorted_values[f], 2)
-    return round(sorted_values[f] + (k - f) * (sorted_values[c] - sorted_values[f]), 2)
-
-
-def _parse_period(period: str) -> int:
-    """Parse period string like '30d' into days. Default 30."""
-    period = period.strip().lower()
-    if period.endswith("d"):
-        try:
-            return int(period[:-1])
-        except ValueError:
-            return 30
-    return 30
 
 
 def _compute_group_stats(hours_list: list[float]) -> dict:

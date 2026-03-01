@@ -18,6 +18,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "alembic>=1.14",
     "websockets>=14",
+    "packaging>=24",
+    "anthropic>=0.45",
 ]
 
 [project.optional-dependencies]

@@ -207,9 +207,9 @@ async def revoke_device(
 ) -> None:
     """Revoke a device certificate.
 
-    1. DB first: device.cert_revoked_at = now()
-    2. Redis: sadd revoked:{org_id} fingerprint
-    3. audit.record("cert.revoked") — CRITICAL EVENT, must succeed
+    1. audit.record("cert.revoked") — CRITICAL EVENT, must succeed FIRST (Invariant #10)
+    2. DB: device.cert_revoked_at = now()
+    3. Redis: sadd revoked:{org_id} fingerprint
     """
     # Fetch device
     device = await db.get(Device, device_id)
@@ -218,25 +218,7 @@ async def revoke_device(
 
     now = datetime.now(timezone.utc)
 
-    # 1. DB update
-    await db.execute(
-        update(Device)
-        .where(Device.id == device_id)
-        .values(cert_revoked_at=now)
-    )
-    await db.flush()
-
-    # 2. Redis revocation cache (best-effort, DB is authoritative)
-    if redis and device.cert_fingerprint:
-        try:
-            await redis.sadd(f"revoked:{device.org_id}", device.cert_fingerprint)
-        except Exception:
-            logger.warning(
-                "Failed to add revocation to Redis for device=%s, DB is authoritative",
-                device_id,
-            )
-
-    # 3. Audit — CRITICAL EVENT (Invariant #10), must succeed or raise
+    # 1. Audit — CRITICAL EVENT (Invariant #10), must succeed BEFORE state change
     await audit_record(
         db,
         event_type="cert.revoked",
@@ -246,6 +228,24 @@ async def revoke_device(
         changes={"reason": reason},
         result="revoked",
     )
+
+    # 2. DB update — only after audit succeeds
+    await db.execute(
+        update(Device)
+        .where(Device.id == device_id)
+        .values(cert_revoked_at=now)
+    )
+    await db.flush()
+
+    # 3. Redis revocation cache (best-effort, DB is authoritative)
+    if redis and device.cert_fingerprint:
+        try:
+            await redis.sadd(f"revoked:{device.org_id}", device.cert_fingerprint)
+        except Exception:
+            logger.warning(
+                "Failed to add revocation to Redis for device=%s, DB is authoritative",
+                device_id,
+            )
 
     logger.info("Revoked cert for device=%s reason=%s", device_id, reason)
 

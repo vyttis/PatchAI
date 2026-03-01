@@ -30,24 +30,12 @@ from backend.app.schemas.exposures import (
     ExposureListItem,
 )
 from backend.app.services import audit
+from backend.app.services.stats import percentile as _percentile
 from backend.app.workers.zeroday_monitor import _parse_interval
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/orgs/{org_id}", tags=["exposures"])
-
-
-def _percentile(sorted_values: list[float], pct: float):
-    """Compute percentile from sorted list. SQLite-compatible (no percentile_cont)."""
-    if not sorted_values:
-        return None
-    n = len(sorted_values)
-    k = (n - 1) * pct
-    f = int(k)
-    c = f + 1
-    if c >= n:
-        return round(sorted_values[f], 2)
-    return round(sorted_values[f] + (k - f) * (sorted_values[c] - sorted_values[f]), 2)
 
 
 # ---------------------------------------------------------------------------

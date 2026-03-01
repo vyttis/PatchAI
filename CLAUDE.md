@@ -467,22 +467,22 @@ patchpilot/
 | 3A      | [x] Complete |
 | 3B      | [x] Complete |
 | 3C      | [x] Complete |
-| 4A      | [ ] Not started |
+| 4A      | [x] Complete |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3 (3A–3C) complete. 135 passing tests (120 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3 (3A–3C) + Phase 4A complete. 144 passing tests (129 backend + 15 agent).
 
-**Phase 3C additions:** Dashboard API completion + compliance/reporting endpoints + MTTRem analytics + GDPR + asset management. `metrics.py` rewritten: `_percentile()` helper for SQLite-compatible p50/p90, `_compute_group_stats()`, multi-dimension `group_by=ring,criticality` with Python-side aggregation. `exposures.py` dashboard stubs completed: mttrem p50/p90/kev_p50 from real DB queries, completed_24h/failed_24h from DeploymentJob, overdue_critical_devices from Device. `reports.py` router created: compliance evidence CSV (StreamingResponse), NIS2 summary (overdue flags, incident_reporting_compliance), compliance report (patch rates, top unresolved), KEV history, exposure timeline, GDPR deletion requests (org + user), asset management (criticality/tags with urgency recalculation, departments). 6 integration tests.
+**Phase 4A additions:** Governed AI layer with GDPR consent gate, hostname/IP redaction, blast-radius guard, audit-before-call semantics. `AIRedactor` class sanitises payloads (hostnames → `Device-{hash[:4]}`, IPs → `IP-{hash[:4]}`). `AIService` class: `execute_nl_query()`, `narrate_compliance_report()` (template fallback when AI disabled), `diagnose_failure()`. All three methods follow the invariant: check consent → build context → sanitise → **audit BEFORE API call** → call Claude → blast radius gate. `estimate_blast_radius()` parses AI responses for device count patterns. AI policy management via `PUT /settings/ai-policy` (org_admin only, CRITICAL audit event). Model: `claude-sonnet-4-20250514`. Pre-4A security fixes: HardHeaderStrip now covers WebSocket scope, `revoke_device` audits BEFORE DB change (Invariant #10), shared `_percentile`/`_parse_period` extracted to `services/stats.py`. 9 integration tests.
 
-**Files created in Session 3C:**
-`backend/app/routers/reports.py`, `backend/app/schemas/reports.py`, `backend/tests/test_3c.py`.
+**Files created in Session 4A:**
+`backend/app/services/ai.py`, `backend/app/services/stats.py`, `backend/app/routers/ai.py`, `backend/app/schemas/ai.py`, `backend/tests/test_4a.py`.
 
-**Files modified in Session 3C:**
-`backend/app/routers/metrics.py` (full rewrite: percentile computation, multi-dimension grouping), `backend/app/routers/exposures.py` (dashboard stubs completed with real DB queries), `backend/app/schemas/metrics.py` (MTTRemGroupRow + top-level aggregates), `backend/app/main.py` (reports_router registered), `CLAUDE.md`.
+**Files modified in Session 4A:**
+`backend/app/main.py` (ai_router registered), `backend/app/middleware/hard_header_strip.py` (WebSocket scope stripping), `backend/app/services/pki.py` (audit-before-DB-change in revoke_device), `backend/app/routers/metrics.py` (shared stats import), `backend/app/routers/exposures.py` (shared stats import), `backend/app/routers/reports.py` (shared stats import), `backend/pyproject.toml` (anthropic + packaging deps), `CLAUDE.md`.
 
-**Phase 3C Gate:** Dashboard KEV count correct (test 1) → MTTRem p50=6.0 with seeded [2,4,6,8,10] dataset (test 2) → Compliance CSV valid headers + data (test 3) → NIS2 overdue flagged for 48h-old incident (test 4) → Criticality change standard→critical increases urgency ~1.5x (test 5) → Empty dataset returns empty list (test 6). All gate items verified.
+**Phase 4A Gate:** AI disabled by default (test 1: AIDisabledError) → Audit written before API call (test 2: audit exists despite API failure) → Blast radius blocks non-admin at 201 devices (test 3) → Redaction removes hostnames (test 4: LAPTOP-JSMITH absent) → Device-{hash} in sanitized payload (test 5) → nl_block_deploy_all blocks "all devices" (test 6) → Template fallback when AI disabled (test 7). All gate items verified.
 
-**Phase 3 complete.** Gate: Canary >20% failure halts before pilot (3A) → fast cadence <35s (3B) → MTTRem computes correctly (3C test 2) → WebSocket live <3s (3B) → Dashboard KEV count correct (3C test 1) → Compliance CSV valid (3C test 3) → NIS2 overdue flagged (3C test 4) → Urgency recalculated on criticality change (3C test 5).
+**Phase 3 summary:** Smart deployment — ring rollout with anomaly halt, BLPOP command delivery, WebSocket live feed, dashboard API, compliance endpoints, MTTRem analytics. 13 tests.
 
 **Phase 2 summary:** Intel pipeline + zero-day response. KEV/MSRC/EPSS/NVD/GHSA feeds, normalization, vuln matching, UnpatchedExposure workflow, exposure API + dashboard. 30 tests.
 

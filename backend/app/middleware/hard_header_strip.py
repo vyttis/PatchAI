@@ -20,7 +20,7 @@ class HardHeaderStrip:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
+        if scope["type"] in ("http", "websocket"):
             headers = scope.get("headers", [])
             scope["headers"] = [
                 (name, value)
