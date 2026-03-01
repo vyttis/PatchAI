@@ -461,7 +461,7 @@ patchpilot/
 | 1C      | [x] Complete |
 | 1D      | [x] Complete |
 | 2A      | [x] Complete |
-| 2B      | [ ] Not started |
+| 2B      | [x] Complete |
 | 2C      | [ ] Not started |
 | 2D      | [ ] Not started |
 | 3A      | [ ] Not started |
@@ -470,15 +470,17 @@ patchpilot/
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2A complete. 91 passing tests (76 backend + 15 agent).
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2A + Phase 2B complete. 102 passing tests (87 backend + 15 agent).
 
-**Phase 2A additions:** Alembic migration `004_phase_2a` with 15 new tables: `vulnerabilities`, `vulnerability_products`, `advisories`, `advisory_vulnerabilities`, `remediations`, `remediation_vulnerabilities`, `remediation_os_targets`, `device_vulnerabilities` (with `mttrem_hours` GENERATED column), `unpatched_exposures` (UNIQUE org_id+vuln_id), `intel_feed_blobs`, `intel_feed_health`, `intel_last_good`, `deployment_jobs`, `software_normalization_log`, `tenant_normalization_overrides`. DB view `mttrem_by_ring` (percentile_cont p50/p90 by ring). Metrics router stub: `GET /api/v1/orgs/{id}/metrics/mttrem?period=30d&group_by=ring&kev_only=false`. Conftest fix: computed columns rendered as regular nullable columns on SQLite (was previously skipping entirely, breaking RETURNING clauses). 10 new tests.
+**Phase 2B additions:** Celery app with Beat schedule (6 scheduled tasks: KEV 4h, MSRC 2h, EPSS daily 02:00, NVD 6h, GHSA daily 03:00, staleness check 1h). Base `IntelFetcher` class with full fetch→store→parse→upsert pipeline (Invariants #8, #9, #13 enforced). Five feed subclasses: `KEVFetcher` (enqueues fleet check for new KEV entries), `MSRCFetcher` (5x exponential backoff, Retry-After, 2h Redis cache, intel_last_good fallback), `EPSSFetcher` (gzipped CSV, storage_path for large files), `NVDFetcher` (pagination, rate limiting, enrichment ONLY), `GHSAFetcher` (GraphQL API). Staleness monitor with per-feed thresholds. Celery task wrappers (sync→async via asyncio.run). 4 pinned fixture files + 4 parser contract tests + 7 integration tests.
 
-**Files created in Session 2A:**
-`backend/app/models/vulnerabilities.py`, `backend/app/models/vulnerability_products.py`, `backend/app/models/advisories.py`, `backend/app/models/remediations.py`, `backend/app/models/device_vulnerabilities.py`, `backend/app/models/unpatched_exposures.py`, `backend/app/models/intel_feeds.py`, `backend/app/models/deployment_jobs.py`, `backend/app/models/software_normalization.py`, `backend/app/schemas/metrics.py`, `backend/app/routers/metrics.py`, `backend/migrations/versions/004_phase_2a_intel_schema.py`, `backend/tests/test_2a.py`.
+**Files created in Session 2B:**
+`backend/app/workers/celery_app.py`, `backend/app/workers/intel_fetcher.py`, `backend/app/workers/tasks.py`, `backend/tests/intel/fixtures/kev_sample.json`, `backend/tests/intel/fixtures/msrc_sample.json`, `backend/tests/intel/fixtures/epss_sample.csv.gz`, `backend/tests/intel/fixtures/nvd_sample.json`, `backend/tests/intel/test_parser_contracts.py`, `backend/tests/test_2b.py`.
 
-**Files modified in Session 2A:**
-`backend/app/models/__init__.py` (all new model exports), `backend/app/main.py` (metrics_router), `backend/tests/conftest.py` (computed column SQLite fix), `CLAUDE.md`.
+**Files modified in Session 2B:**
+`backend/app/workers/__init__.py` (Celery app import for discovery), `CLAUDE.md`.
+
+**Phase 2A summary:** Intel pipeline schema — 15 new tables, mttrem_by_ring view, metrics router stub. 10 tests.
 
 **Phase 1 summary:** Secure foundation — mTLS enrollment, PKI envelope encryption, delta check-in, deployment packs. 66 backend + 15 agent tests. Audited: all 16 invariants verified.
 

@@ -1,0 +1,68 @@
+{
+  "title": "CISA Known Exploited Vulnerabilities Catalog",
+  "catalogVersion": "2024.01.15",
+  "dateReleased": "2024-01-15T00:00:00.0000Z",
+  "count": 5,
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2024-21887",
+      "vendorProject": "Ivanti",
+      "product": "Connect Secure and Policy Secure",
+      "vulnerabilityName": "Ivanti Connect Secure and Policy Secure Command Injection Vulnerability",
+      "dateAdded": "2024-01-10",
+      "shortDescription": "Ivanti Connect Secure (9.x, 22.x) and Ivanti Policy Secure (9.x, 22.x) contain a command injection vulnerability in web components allowing an authenticated administrator to send specially crafted requests and execute arbitrary commands on the appliance.",
+      "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+      "dueDate": "2024-01-31",
+      "knownRansomwareCampaignUse": "Known",
+      "notes": ""
+    },
+    {
+      "cveID": "CVE-2024-0519",
+      "vendorProject": "Google",
+      "product": "Chromium V8",
+      "vulnerabilityName": "Google Chromium V8 Out-of-Bounds Memory Access Vulnerability",
+      "dateAdded": "2024-01-17",
+      "shortDescription": "Google Chromium V8 contains an out-of-bounds memory access vulnerability that allows a remote attacker to potentially exploit heap corruption via a crafted HTML page.",
+      "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+      "dueDate": "2024-02-07",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": ""
+    },
+    {
+      "cveID": "CVE-2023-46805",
+      "vendorProject": "Ivanti",
+      "product": "Connect Secure and Policy Secure",
+      "vulnerabilityName": "Ivanti Connect Secure and Policy Secure Authentication Bypass Vulnerability",
+      "dateAdded": "2024-01-10",
+      "shortDescription": "Ivanti Connect Secure (9.x, 22.x) and Ivanti Policy Secure (9.x, 22.x) contain an authentication bypass vulnerability in the web component that allows an attacker to access certain restricted resources without authentication.",
+      "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+      "dueDate": "2024-01-31",
+      "knownRansomwareCampaignUse": "Known",
+      "notes": ""
+    },
+    {
+      "cveID": "CVE-2023-29357",
+      "vendorProject": "Microsoft",
+      "product": "SharePoint Server",
+      "vulnerabilityName": "Microsoft SharePoint Server Privilege Escalation Vulnerability",
+      "dateAdded": "2024-01-10",
+      "shortDescription": "Microsoft SharePoint Server contains a privilege escalation vulnerability that could allow an attacker who has gained access to spoofed JWT authentication tokens to use them to execute a network attack which bypasses authentication.",
+      "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+      "dueDate": "2024-01-31",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": ""
+    },
+    {
+      "cveID": "CVE-2024-23222",
+      "vendorProject": "Apple",
+      "product": "Multiple Products",
+      "vulnerabilityName": "Apple Multiple Products Type Confusion Vulnerability",
+      "dateAdded": "2024-01-23",
+      "shortDescription": "Apple iOS, iPadOS, macOS, tvOS, and Safari WebKit contain a type confusion vulnerability that could allow an attacker to achieve code execution when processing maliciously crafted web content.",
+      "requiredAction": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
+      "dueDate": "2024-02-13",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "vulnerabilities": [
+    {
+      "cve": {
+        "id": "CVE-2024-20674",
+        "published": "2024-01-09T18:15:00.000Z",
+        "lastModified": "2024-01-16T20:15:00.000Z",
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "Windows Kerberos Security Feature Bypass Vulnerability"
+          }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+                "baseScore": 9.0,
+                "baseSeverity": "CRITICAL"
+              }
+            }
+          ]
+        },
+        "references": [
+          {
+            "url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-20674",
+            "source": "secure@microsoft.com"
+          }
+        ],
+        "configurations": [
+          {
+            "nodes": [
+              {
+                "operator": "OR",
+                "negate": false,
+                "cpeMatch": [
+                  {
+                    "vulnerable": true,
+                    "criteria": "cpe:2.3:o:microsoft:windows_10_1809:*:*:*:*:*:*:*:*",
+                    "versionEndExcluding": "10.0.17763.5329"
+                  },
+                  {
+                    "vulnerable": true,
+                    "criteria": "cpe:2.3:o:microsoft:windows_11_22h2:*:*:*:*:*:*:*:*",
+                    "versionEndExcluding": "10.0.22621.3007"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2024-20683",
+        "published": "2024-01-09T18:15:00.000Z",
+        "lastModified": "2024-01-12T14:30:00.000Z",
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "Win32k Elevation of Privilege Vulnerability"
+          }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "baseScore": 7.8,
+                "baseSeverity": "HIGH"
+              }
+            }
+          ]
+        },
+        "references": [
+          {
+            "url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-20683",
+            "source": "secure@microsoft.com"
+          }
+        ],
+        "configurations": []
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2024-20698",
+        "published": "2024-01-09T18:15:00.000Z",
+        "lastModified": "2024-01-14T10:00:00.000Z",
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "Windows Kernel Elevation of Privilege Vulnerability"
+          }
+        ],
+        "metrics": {
+          "cvssMetricV31": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "cvssData": {
+                "version": "3.1",
+                "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                "baseScore": 7.8,
+                "baseSeverity": "HIGH"
+              }
+            }
+          ]
+        },
+        "references": [
+          {
+            "url": "https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-20698",
+            "source": "secure@microsoft.com"
+          }
+        ],
+        "configurations": [
+          {
+            "nodes": [
+              {
+                "operator": "OR",
+                "negate": false,
+                "cpeMatch": [
+                  {
+                    "vulnerable": true,
+                    "criteria": "cpe:2.3:o:microsoft:windows_server_2022:*:*:*:*:*:*:*:*",
+                    "versionEndExcluding": "10.0.20348.2227"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "value": [
+    {
+      "ID": "2024-Jan",
+      "Alias": "2024-Jan",
+      "DocumentTitle": "January 2024 Security Updates",
+      "Severity": "Critical",
+      "InitialReleaseDate": "2024-01-09T08:00:00Z",
+      "CurrentReleaseDate": "2024-01-09T08:00:00Z",
+      "CvrfUrl": "https://api.msrc.microsoft.com/cvrf/v3.0/cvrf/2024-Jan",
+      "CVEs": [
+        "CVE-2024-20674",
+        "CVE-2024-20683",
+        "CVE-2024-20698"
+      ],
+      "KBArticles": [
+        {
+          "ID": "KB5034441",
+          "FixedBuildNumber": "10.0.19041.3930"
+        },
+        {
+          "ID": "KB5034439",
+          "FixedBuildNumber": "10.0.22621.3007"
+        }
+      ]
+    }
+  ]
+}
