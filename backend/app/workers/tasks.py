@@ -119,6 +119,19 @@ def vuln_match_apps_task(device_id: str):
     return asyncio.run(_run())
 
 
+@app.task(name="backend.app.workers.tasks.check_canary_anomaly")
+def check_canary_anomaly_task(remediation_id: str, org_id: str):
+    """Check canary ring for anomalies (scheduled after canary dispatch)."""
+    async def _run():
+        async with async_session() as db:
+            from backend.app.workers.ring_rollout import check_canary_anomaly
+            result = await check_canary_anomaly(db, UUID(remediation_id), UUID(org_id))
+            await db.commit()
+            return result
+
+    return asyncio.run(_run())
+
+
 @app.task(name="backend.app.workers.tasks.recheck_unpatched_exposures")
 def recheck_unpatched_exposures_task():
     """Recheck open UnpatchedExposures for newly available patches (every 1h).

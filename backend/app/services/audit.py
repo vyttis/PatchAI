@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 CRITICAL_EVENTS = frozenset({
     "policy.evaluated",
     "deployment.dispatched",
+    "job.state_changed",
     "cert.revoked",
     "cert.enrolled",
     "ai.external_call",

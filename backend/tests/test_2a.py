@@ -197,6 +197,7 @@ async def test_mttrem_query_with_ring_join(db: AsyncSession, org_id):
         remediation_id=remediation.id,
         ring="canary",
         state="complete",
+        playbook_snapshot={"type": "patch", "kb": "KB5000001"},
     )
     db.add(dj)
     await db.flush()

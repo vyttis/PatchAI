@@ -464,29 +464,25 @@ patchpilot/
 | 2B      | [x] Complete |
 | 2C      | [x] Complete |
 | 2D      | [x] Complete |
-| 3A      | [ ] Not started |
+| 3A      | [x] Complete |
 | 3B      | [ ] Not started |
 | 3C      | [ ] Not started |
 | 4A      | [ ] Not started |
 | 4B      | [ ] Not started |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) complete. 115 passing tests (100 backend + 15 agent). Phase 2 Gate passed.
+**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3A complete. 122 passing tests (107 backend + 15 agent).
 
-**Phase 2D additions:** Zero-day response workflow. `zeroday_monitor.py`: enhanced `ensure_unpatched_exposure()` with advisory mitigation extraction + audit, `recheck_unpatched_exposures()` Celery Beat hourly loop (auto-transitions open→patched when remediation appears, stores deployment_recommendation in mitigations JSONB), `format_exposure_notification()` with "ZERO-DAY RESPONSE" language (Invariant #14). Exposure router: GET /exposures (list), GET /exposures/{eid} (detail), POST /exposures/{eid}/accept (CRITICAL audit event before status change), GET /exposures/{eid}/history (audit_log recheck trail), GET /dashboard (6-section summary: KEV exposures, unpatched count, top 20 urgent, deployment summary, MTTRem, fleet health). Import bridge in vuln_matching.py → zeroday_monitor.py. 5 integration tests.
+**Phase 3A additions:** Deployment job state machine + ring rollout + anomaly halt. `state_machine.py`: `VALID_TRANSITIONS` map (11 states), `InvalidTransition` exception, `transition()` with audit-before-change (CRITICAL), deferral enforcement (max 3, forced_reboot after). `ring_rollout.py`: `create_deployment_plan()` (canary max(3,1%)/pilot 10%/broad), `dispatch_ring()` (DeploymentJob creation + Redis rpush command + setex fast_cadence 600s), `check_canary_anomaly()` (>20% failure rate + telemetry thresholds: cpu>80, crashes>2, reboots>5, disk<3GB). Deployments router: POST /deployments (CRITICAL audit policy.evaluated before dispatch), POST /approve-next-ring (CRITICAL audit deployment.dispatched, anomaly check gate), GET /deployments/{did} (ring progress + anomaly status). DeploymentJob model extended: completed_at, failure_reason, deferred_count, forced_reboot_at, retry_count, created_by_user_id. Agent patch_executor.py stubs (execute_playbook, 3-path fallback, winget schtasks). `"job.state_changed"` added to CRITICAL_EVENTS. 7 integration tests.
 
-**Files created in Session 2D:**
-`backend/app/workers/zeroday_monitor.py`, `backend/app/routers/exposures.py`, `backend/app/schemas/exposures.py`, `backend/tests/test_2d.py`.
+**Files created in Session 3A:**
+`backend/app/services/state_machine.py`, `backend/app/workers/ring_rollout.py`, `backend/app/routers/deployments.py`, `backend/app/schemas/deployments.py`, `backend/tests/test_3a.py`.
 
-**Files modified in Session 2D:**
-`backend/app/workers/vuln_matching.py` (import bridge to zeroday_monitor), `backend/app/workers/tasks.py` (recheck task), `backend/app/workers/celery_app.py` (Beat schedule entry), `backend/app/main.py` (register exposures_router), `CLAUDE.md`.
+**Files modified in Session 3A:**
+`backend/app/models/deployment_jobs.py` (6 new columns), `backend/app/services/audit.py` (added job.state_changed to CRITICAL_EVENTS), `backend/app/workers/tasks.py` (check_canary_anomaly_task), `backend/app/main.py` (register deployments_router), `agent/windows/patch_executor.py` (stubs), `backend/tests/test_1a.py` (updated CRITICAL_EVENTS spec), `backend/tests/test_2a.py` (playbook_snapshot NOT NULL), `CLAUDE.md`.
 
-**Phase 2 Gate:** KEV entry → fleet exposure check → unpatched KEV → UnpatchedExposure created (test 1) → recheck → transitions to patched when KB appears (test 2) → no duplicates (test 3) → accept_risk CRITICAL audit (test 4) → "response" not "detection" language (test 5). All gate items verified.
+**Phase 3A Gate:** InvalidTransition raised for illegal state changes (tests 1,2) → audit written BEFORE state change, audit failure blocks transition (test 3) → canary >20% failure → halt (test 4) → canary <20% → pass (test 5) → max 3 deferrals enforced (test 6) → fast_cadence Redis key set on dispatch (test 7). All gate items verified.
 
-**Phase 2C summary:** SoftwareNormalizerV2 (6-level fallback), vuln_match_os + vuln_match_apps, compute_urgency_score, ensure_unpatched_exposure, normalization admin endpoints. 8 tests.
-
-**Phase 2B summary:** Celery Beat schedule (6 tasks). Base IntelFetcher + 5 feed subclasses. Staleness monitor. 4 parser contract tests + 7 integration tests.
-
-**Phase 2A summary:** Intel pipeline schema — 15 new tables, mttrem_by_ring view, metrics router stub. 10 tests.
+**Phase 2 summary:** Intel pipeline + zero-day response. KEV/MSRC/EPSS/NVD/GHSA feeds, normalization, vuln matching, UnpatchedExposure workflow, exposure API + dashboard. 30 tests.
 
 **Phase 1 summary:** Secure foundation — mTLS enrollment, PKI envelope encryption, delta check-in, deployment packs. 66 backend + 15 agent tests.
 

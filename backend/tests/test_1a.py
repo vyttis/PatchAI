@@ -369,6 +369,7 @@ async def test_critical_events_set_matches_spec():
     expected = {
         "policy.evaluated",
         "deployment.dispatched",
+        "job.state_changed",
         "cert.revoked",
         "cert.enrolled",
         "ai.external_call",
