@@ -1,8 +1,33 @@
+import { Hero } from "@/components/landing/Hero";
+import { SixStageLoop } from "@/components/landing/SixStageLoop";
+import {
+  TrustBar,
+  ProblemSolution,
+  MetricsStats,
+  FeaturesGrid,
+  RingRolloutVisual,
+  ComplianceSection,
+  ComparisonTable,
+  TestimonialSection,
+  FinalCTA,
+  Footer,
+} from "@/components/landing/sections";
+
 export default function Home() {
   return (
     <main>
-      <h1>PatchPilot</h1>
-      <p>Exploit-to-Remediation Automation Platform</p>
+      <Hero />
+      <TrustBar />
+      <ProblemSolution />
+      <SixStageLoop />
+      <MetricsStats />
+      <FeaturesGrid />
+      <RingRolloutVisual />
+      <ComplianceSection />
+      <ComparisonTable />
+      <TestimonialSection />
+      <FinalCTA />
+      <Footer />
     </main>
   );
 }
