@@ -7,7 +7,12 @@ from backend.app.config import settings
 
 _engine_kwargs: dict = {"echo": settings.debug}
 if not settings.database_url.startswith("sqlite"):
-    _engine_kwargs.update(pool_size=20, max_overflow=5)
+    _engine_kwargs.update(
+        pool_size=20,
+        max_overflow=10,
+        pool_pre_ping=True,
+        pool_recycle=3600,
+    )
 
 engine = create_async_engine(settings.database_url, **_engine_kwargs)
 

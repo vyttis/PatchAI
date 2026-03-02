@@ -168,3 +168,20 @@ def recheck_unpatched_exposures_task():
             return result
 
     return asyncio.run(_run())
+
+
+@app.task(name="backend.app.workers.tasks.gdpr_retention_cleanup")
+def gdpr_retention_cleanup_task():
+    """GDPR data retention cleanup (daily 04:00 UTC).
+
+    Deletes non-critical audit entries and processed intel blobs
+    beyond org retention settings. See workers/retention.py.
+    """
+    async def _run():
+        async with async_session() as db:
+            from backend.app.workers.retention import gdpr_retention_cleanup
+            result = await gdpr_retention_cleanup(db)
+            await db.commit()
+            return result
+
+    return asyncio.run(_run())

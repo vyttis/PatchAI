@@ -8,6 +8,7 @@ Feed cadence (settled — do not change):
   GHSA: daily 03:00 — third-party coverage
   Staleness check: every 1h
   Recheck unpatched exposures: every 1h (zero-day response)
+  GDPR retention cleanup: daily 04:00
 """
 
 from celery import Celery
@@ -57,5 +58,9 @@ app.conf.beat_schedule = {
     "recheck_unpatched_exposures": {
         "task": "backend.app.workers.tasks.recheck_unpatched_exposures",
         "schedule": crontab(minute=30),
+    },
+    "gdpr_retention_cleanup": {
+        "task": "backend.app.workers.tasks.gdpr_retention_cleanup",
+        "schedule": crontab(minute=0, hour=4),
     },
 }

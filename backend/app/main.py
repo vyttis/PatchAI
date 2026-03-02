@@ -2,8 +2,9 @@
 
 Middleware order (outermost first):
 1. HardHeaderStrip — strips mTLS identity headers unconditionally (Invariant #2)
-2. MTLSHeaderGuard — validates mTLS headers on agent routes
-3. FastAPI app
+2. RateLimiter — Redis sliding-window rate limiting (graceful fallback)
+3. MTLSHeaderGuard — validates mTLS headers on agent routes
+4. FastAPI app
 """
 
 import logging
@@ -14,6 +15,7 @@ from fastapi import FastAPI
 from backend.app.config import settings
 from backend.app.middleware.hard_header_strip import HardHeaderStrip
 from backend.app.middleware.mtls_guard import MTLSHeaderGuard
+from backend.app.middleware.rate_limiter import RateLimiter
 from backend.app.routers.compliance import router as compliance_router
 from backend.app.routers.deployment_packs import router as deployment_packs_router
 from backend.app.routers.devices import router as devices_router
@@ -25,6 +27,7 @@ from backend.app.routers.exposures import router as exposures_router
 from backend.app.routers.ai import router as ai_router
 from backend.app.routers.normalization import router as normalization_router
 from backend.app.routers.reports import router as reports_router
+from backend.app.routers.sso import router as sso_router
 
 logger = logging.getLogger(__name__)
 
@@ -33,13 +36,16 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Invariant #4: warm revocation cache on startup
     try:
-        if settings.redis_url:
+        from backend.app.dependencies.redis import get_redis_pool
+
+        pool = get_redis_pool()
+        if pool:
             from redis.asyncio import Redis
 
             from backend.app.database import async_session
             from backend.app.services.pki import warm_revocation_cache_on_startup
 
-            redis = Redis.from_url(settings.redis_url, decode_responses=True)
+            redis = Redis(connection_pool=pool)
             try:
                 async with async_session() as db:
                     count = await warm_revocation_cache_on_startup(redis, db)
@@ -71,7 +77,17 @@ app.include_router(exposures_router)
 app.include_router(deployments_router)
 app.include_router(reports_router)
 app.include_router(ai_router)
+app.include_router(sso_router)
 
 # Wrap app with middleware — outermost layer processes first.
-# MTLSHeaderGuard runs after HardHeaderStrip has cleaned headers.
-app_with_middleware = HardHeaderStrip(MTLSHeaderGuard(app))
+# HardHeaderStrip → RateLimiter → MTLSHeaderGuard → FastAPI app
+from backend.app.dependencies.redis import get_redis_pool as _get_pool
+
+app_with_middleware = HardHeaderStrip(
+    RateLimiter(
+        MTLSHeaderGuard(app),
+        redis_pool=_get_pool(),
+        device_rpm=settings.rate_limit_device_rpm,
+        org_rpm=settings.rate_limit_org_rpm,
+    )
+)

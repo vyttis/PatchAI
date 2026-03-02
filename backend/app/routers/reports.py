@@ -40,6 +40,7 @@ from backend.app.schemas.reports import (
     DeviceTagsUpdate,
     ExposureTimelineEntry,
     KEVHistoryRow,
+    MTTRemExecutiveReport,
     NIS2ComplianceSummary,
 )
 from backend.app.services.stats import parse_period as _parse_period
@@ -668,3 +669,33 @@ async def list_departments(
         )
         for dept, count in result.all()
     ]
+
+
+# ---------------------------------------------------------------------------
+# MTTRem Executive Report
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/api/v1/orgs/{org_id}/reports/mttrem-executive",
+    response_model=MTTRemExecutiveReport,
+)
+async def mttrem_executive_report(
+    org_id: _uuid.UUID,
+    period: str = Query("30d"),
+    scope: OrgScope = Depends(get_org_scope),
+    _auth: None = Depends(require_role("org_admin", "admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """MTTRem executive report with optional AI narration.
+
+    Returns p50/p90, ring/criticality breakdowns, top unresolved, patch rate,
+    and a narrative summary (template fallback when AI disabled).
+    """
+    from backend.app.services.executive_report import generate_mttrem_executive_report
+
+    period_days = _parse_period(period)
+    result = await generate_mttrem_executive_report(
+        db, scope.org_id, scope.user.id, period_days,
+    )
+    return MTTRemExecutiveReport(**result)

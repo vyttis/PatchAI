@@ -468,23 +468,25 @@ patchpilot/
 | 3B      | [x] Complete |
 | 3C      | [x] Complete |
 | 4A      | [x] Complete |
-| 4B      | [ ] Not started |
+| 4B      | [x] Complete |
 
-**What's built:** Phase 0 + Phase 1 (1A–1D) + Phase 2 (2A–2D) + Phase 3 (3A–3C) + Phase 4A complete. 144 passing tests (129 backend + 15 agent).
+**What's built:** All phases complete (0 + 1 + 2 + 3 + 4). 153 passing tests (138 backend + 15 agent).
 
-**Phase 4A additions:** Governed AI layer with GDPR consent gate, hostname/IP redaction, blast-radius guard, audit-before-call semantics. `AIRedactor` class sanitises payloads (hostnames → `Device-{hash[:4]}`, IPs → `IP-{hash[:4]}`). `AIService` class: `execute_nl_query()`, `narrate_compliance_report()` (template fallback when AI disabled), `diagnose_failure()`. All three methods follow the invariant: check consent → build context → sanitise → **audit BEFORE API call** → call Claude → blast radius gate. `estimate_blast_radius()` parses AI responses for device count patterns. AI policy management via `PUT /settings/ai-policy` (org_admin only, CRITICAL audit event). Model: `claude-sonnet-4-20250514`. Pre-4A security fixes: HardHeaderStrip now covers WebSocket scope, `revoke_device` audits BEFORE DB change (Invariant #10), shared `_percentile`/`_parse_period` extracted to `services/stats.py`. 9 integration tests.
+**Phase 4B additions:** MTTRem executive report with AI narration (template fallback), SSO stubs (SAML/OIDC → 501), connection pool tuning (pool_pre_ping, pool_recycle=3600, max_overflow=10), Redis connection pool (max_connections=100), Redis sliding-window rate limiter (10 req/min device, 100 req/min org, graceful Redis fallback), GDPR retention cleanup (daily 04:00, non-critical audit + processed blobs), load testing documentation. 9 integration tests.
 
-**Files created in Session 4A:**
-`backend/app/services/ai.py`, `backend/app/services/stats.py`, `backend/app/routers/ai.py`, `backend/app/schemas/ai.py`, `backend/tests/test_4a.py`.
+**Files created in Session 4B:**
+`backend/app/services/executive_report.py`, `backend/app/routers/sso.py`, `backend/app/middleware/rate_limiter.py`, `backend/app/workers/retention.py`, `docs/load-testing.md`, `backend/tests/test_4b.py`.
 
-**Files modified in Session 4A:**
-`backend/app/main.py` (ai_router registered), `backend/app/middleware/hard_header_strip.py` (WebSocket scope stripping), `backend/app/services/pki.py` (audit-before-DB-change in revoke_device), `backend/app/routers/metrics.py` (shared stats import), `backend/app/routers/exposures.py` (shared stats import), `backend/app/routers/reports.py` (shared stats import), `backend/pyproject.toml` (anthropic + packaging deps), `CLAUDE.md`.
+**Files modified in Session 4B:**
+`backend/app/config.py` (rate_limit_device_rpm, rate_limit_org_rpm), `backend/app/database.py` (pool tuning), `backend/app/dependencies/redis.py` (ConnectionPool), `backend/app/main.py` (sso_router + RateLimiter middleware), `backend/app/schemas/reports.py` (MTTRemExecutiveReport), `backend/app/routers/reports.py` (mttrem-executive endpoint), `backend/app/workers/celery_app.py` (retention Beat entry), `backend/app/workers/tasks.py` (retention task), `CLAUDE.md`.
 
-**Phase 4A Gate:** AI disabled by default (test 1: AIDisabledError) → Audit written before API call (test 2: audit exists despite API failure) → Blast radius blocks non-admin at 201 devices (test 3) → Redaction removes hostnames (test 4: LAPTOP-JSMITH absent) → Device-{hash} in sanitized payload (test 5) → nl_block_deploy_all blocks "all devices" (test 6) → Template fallback when AI disabled (test 7). All gate items verified.
+**Phase 4B Gate:** Executive report returns p50/p90/narrative with AI disabled (test 1) → SSO SAML 501 (test 2) → SSO OIDC 501 (test 3) → Pool settings verified (test 4) → Rate limiter 429 on burst (test 5) → Rate limiter Redis fallback (test 6) → GDPR retention deletes old non-critical, preserves critical (test 7) → Beat schedule includes retention at 04:00 (test 8) → Rate limiter skips BLPOP long-poll (test 9). All gate items verified.
 
-**Phase 3 summary:** Smart deployment — ring rollout with anomaly halt, BLPOP command delivery, WebSocket live feed, dashboard API, compliance endpoints, MTTRem analytics. 13 tests.
+**Phase 4A summary:** Governed AI layer — GDPR consent gate, hostname/IP redaction, blast-radius guard, audit-before-call. AIRedactor, AIService, AI policy endpoints. Pre-4A security fixes. 9 tests.
 
-**Phase 2 summary:** Intel pipeline + zero-day response. KEV/MSRC/EPSS/NVD/GHSA feeds, normalization, vuln matching, UnpatchedExposure workflow, exposure API + dashboard. 30 tests.
+**Phase 3 summary:** Smart deployment — ring rollout, anomaly halt, BLPOP command delivery, WebSocket, dashboard API, compliance, MTTRem. 13 tests.
+
+**Phase 2 summary:** Intel pipeline + zero-day response — KEV/MSRC/EPSS/NVD/GHSA feeds, vuln matching, UnpatchedExposure. 30 tests.
 
 **Phase 1 summary:** Secure foundation — mTLS enrollment, PKI envelope encryption, delta check-in, deployment packs. 66 backend + 15 agent tests.
 
@@ -500,7 +502,7 @@ patchpilot/
 | NVD cadence changed to hourly | NVD = 6h by design. See decisions log. Test verifies Celery Beat schedule. |
 | Agent JWT added | Agents use mTLS only. No JWT. Never add agent JWT. |
 | Detection language | "Zero-day response" everywhere. Never "zero-day detection." |
-| Mutable `audit_log` | INSERT only at DB level. Never add cleanup job. |
+| Mutable `audit_log` | INSERT only for `patchpilot_app` role. GDPR retention uses dedicated role for non-critical deletes. |
 | 2s polling loop for commands | BLPOP only. |
 | Full inventory every check-in | Hash delta. Full send daily at 03:00 only. |
 | AI without consent gate | Check `external_ai_enabled`, write audit log, then call API. In that order. |

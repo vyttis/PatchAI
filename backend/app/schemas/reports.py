@@ -92,3 +92,35 @@ class ExposureTimelineEntry(BaseModel):
     timestamp: Optional[datetime] = None
     event: str
     details: Optional[dict] = None
+
+
+# ---------------------------------------------------------------------------
+# MTTRem executive report
+# ---------------------------------------------------------------------------
+
+
+class MTTRemGroupBreakdown(BaseModel):
+    group: str
+    p50: Optional[float] = None
+    p90: Optional[float] = None
+    avg_hours: Optional[float] = None
+    sample_count: int = 0
+
+
+class MTTRemExecutiveReport(BaseModel):
+    period_days: int
+    generated_at: datetime
+    fleet_size: int
+    total_exposed: int
+    total_patched: int
+    patch_rate: float
+    overall_p50: Optional[float] = None
+    overall_p90: Optional[float] = None
+    overall_mean: Optional[float] = None
+    kev_p50: Optional[float] = None
+    kev_p90: Optional[float] = None
+    by_ring: list[MTTRemGroupBreakdown]
+    by_criticality: list[MTTRemGroupBreakdown]
+    top_unresolved: list[dict]
+    narrative: Optional[str] = None
+    ai_generated: bool = False

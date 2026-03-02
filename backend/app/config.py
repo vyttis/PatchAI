@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     secret_key: str = ""  # FastAPI session secret
     internal_release_key: str = ""  # X-Internal-Key for POST /internal/releases
 
+    # --- Rate Limiting ---
+    rate_limit_device_rpm: int = 10  # requests per minute per device (checkin routes)
+    rate_limit_org_rpm: int = 100  # requests per minute per org (API routes)
+
     # --- App ---
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
